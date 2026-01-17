@@ -1,31 +1,79 @@
 <template>
     <div class="tree">
-        <el-text>文件夹</el-text>
+        <el-text>{{ props.type == 'folder' ? '文件夹' : '标签' }}</el-text>
         <div class="btns">
             <div class="btn iconfont">&#xeb59;</div>
-            <div class="btn iconfont">&#xeb19;</div>
+            <div class="btn iconfont" @click="add">&#xeb19;</div>
         </div>
     </div>
-    <el-tree ref="treeRef" style="max-width: 600px" class="filter-tree" :data="data" />
+    <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="filter-tree" :data="data"
+        @node-click="treeClick" @node-expand="treeExpand" @node-collapse="treeCollapse" />
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { DB_getfolderslist } from '@/apis/resourcesdb/index.js'
+import * as api from '@/apis/resourcesdb/index.js'
+import { useLocalStore } from '@/pinia/local'
+const localStore = useLocalStore()
 const data = ref([])
+const expanded = ref([])
 const props = defineProps({
     type: {
         type: String,
         default: 'folder'
     }
 })
-onMounted(async () => {
-    if (props.type == 'folder') {
-        data.value = await DB_getfolderslist()
-    } else if (props.type == 'tags') {
-        data.value = await DB_gettagslist()
-    }
+onMounted(() => {
+    getlist()
 })
+//刷新列表
+async function getlist() {
+    if (props.type == 'folder') {
+        const d = await api.DB_getfolderslist()
+        data.value = d[0]
+        expanded.value = d[1]
+    } else if (props.type == 'tag') {
+        const d = await api.DB_gettagslist()
+        data.value = d[0]
+        expanded.value = d[1]
+    }
+}
+//添加文件夹
+function add() {
+    if (props.type == 'folder') {
+        api.DB_createfolder(localStore.currentlySelectedFolderID)
+        api.DB_updatefolder(localStore.currentlySelectedFolderID, { expanded: true })
+
+    } else if (props.type == 'tag') {
+        api.DB_createtag(localStore.currentlySelectedTagID)
+        api.DB_updatetag(localStore.currentlySelectedTagID, { expanded: true })
+    }
+    getlist()
+}
+//节点被单击
+function treeClick(Node) {
+    if (props.type == 'folder') {
+        localStore.currentlySelectedFolderID = Node.id
+    } else if (props.type == 'tag') {
+        localStore.currentlySelectedTagID = Node.id
+    }
+}
+//节点被展开
+function treeExpand(Node) {
+    if (props.type == 'folder') {
+        api.DB_updatefolder(Node.id, { expanded: true })
+    } else if (props.type == 'tag') {
+        api.DB_updatetag(Node.id, { expanded: true })
+    }
+}
+//节点被隐藏
+function treeCollapse(Node) {
+    if (props.type == 'folder') {
+        api.DB_updatefolder(Node.id, { expanded: false })
+    } else if (props.type == 'tag') {
+        api.DB_updatetag(Node.id, { expanded: false })
+    }
+}
 </script>
 
 <style lang="scss" scoped>

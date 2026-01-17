@@ -15,7 +15,6 @@ function createdb() {
   const folderURL = path.join(folderpath, folderName)
   fs.mkdirSync(folderURL, { recursive: true })
 
-
   const dbURL = path.join(folderURL, 'resources.db')
   const db = new Database(dbURL)
 
@@ -57,8 +56,9 @@ function createdb() {
     CREATE TABLE IF NOT EXISTS tags (
       id INTEGER PRIMARY KEY AUTOINCREMENT, -- id(自增)
       parent_tag_id INTEGER DEFAULT NULL, -- 父标签id
-      name TEXT NOT NULL UNIQUE, -- name(标签名称)
+      name TEXT NOT NULL, -- name(标签名称)
       color TEXT NOT NULL, -- color(标签颜色)
+      expanded BOOLEAN NOT NULL, -- true or false(是否展开)
       created_at INTEGER NOT NULL, -- 创建时间（到秒时间戳）
       updated_at INTEGER NOT NULL, -- 修改时间（到秒时间戳）
       FOREIGN KEY (parent_tag_id) REFERENCES tags(id) ON DELETE CASCADE
@@ -69,8 +69,9 @@ function createdb() {
     CREATE TABLE IF NOT EXISTS folders (
       id INTEGER PRIMARY KEY AUTOINCREMENT, -- id(自增)
       parent_folder_id INTEGER DEFAULT NULL, -- 父文件夹id
-      name TEXT NOT NULL UNIQUE, -- name(文件名称)
+      name TEXT NOT NULL, -- name(文件名称)
       color TEXT NOT NULL, -- color(文件颜色)
+      expanded BOOLEAN NOT NULL, -- true or false(是否展开)
       created_at INTEGER NOT NULL, -- 创建时间（到秒时间戳）
       updated_at INTEGER NOT NULL, -- 修改时间（到秒时间戳）
       FOREIGN KEY (parent_folder_id) REFERENCES folders(id) ON DELETE CASCADE
@@ -100,7 +101,6 @@ function createfolder() {
   const folderURL = path.join(folderpath, folderName)
   if (!folderURL) return null
   fs.mkdirSync(folderURL, { recursive: true })
-
 
   const resourcesPath = path.join(folderURL, 'resources')
   const hexChars = '0123456789abcdef'

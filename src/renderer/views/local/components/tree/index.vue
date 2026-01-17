@@ -11,7 +11,7 @@
                 <template #label>
                     <span class="iconfont">&#xeb2a;</span>
                 </template>
-                <Ttree type="folder"></Ttree>
+                <Ttree type="tag"></Ttree>
             </el-tab-pane>
         </el-tabs>
     </div>
