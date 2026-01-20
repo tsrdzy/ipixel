@@ -5,7 +5,6 @@
         <el-card :key="tooltypes.value" v-for="tooltypes in tools" class="tooltypes">
           <template #header>
             <div class="header">
-              <!-- <div class="icon iconfont" v-html="tooltypes.icon"></div> -->
               <div class="title">{{ tooltypes.label }}</div>
             </div>
           </template>
@@ -117,6 +116,7 @@ const tools = ref([
     display: flex;
     flex-direction: column;
     gap: 8px;
+
     .tooltypes {
       width: calc(100% - 8px);
       height: auto;

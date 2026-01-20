@@ -6,13 +6,15 @@
         <div class="resources" v-else-if="file.type == 'ase'">
             <img :src="file.base64" alt="无数据">
         </div>
-        <div class="resources" v-else>
-            {{ props.data.format }},
-            {{ props.data.type }}
+        <div class="resources other" v-else>
+            <div class="img">
+                <span class="iconfont">&#xeb13;</span>
+                {{ props.data.format }}
+            </div>
         </div>
-        <el-tag class="tag" size="small">
-            {{ props.data.format }}
-        </el-tag>
+        <div class="tag" size="small">
+            {{ props.data.format.substring(1).toUpperCase() }}
+        </div>
     </div>
 </template>
 
@@ -36,7 +38,7 @@ const types = ref({
 const imageTypeArray = ref(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'])
 const aseTypeArray = ref(['.ase', '.aseprite'])
 const file = ref({
-    type: 'image',
+    type: '',
     base64: ''
 })
 const props = defineProps(
@@ -58,6 +60,7 @@ async function getbufferdata() {
     if (data.success) {
         const buffer = data.data
         if (imageTypeArray.value.includes(props.data.format)) {
+            console.log(props.data)
             file.value.base64 = await bufferToBase64(buffer, types.value[extension]?.value)
             file.value.type = 'image'
         } else if (aseTypeArray.value.includes(props.data.format)) {
@@ -83,6 +86,7 @@ async function getbufferdata() {
     .resources {
         width: 100%;
         height: 100%;
+
         img {
             width: 100%;
             height: 100%;
@@ -91,10 +95,35 @@ async function getbufferdata() {
         }
     }
 
+    .other {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: #777;
+
+        .img {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            span {
+                font-size: 30px;
+            }
+        }
+    }
+
     .tag {
         position: absolute;
         top: 0;
         left: 0;
+        background-color: var(--el-bg-color-page);
+        font-size: 10px;
+        border-radius: 2px;
+        padding: 0 2px;
+        color: var(--el-text-color-primary);
+        margin: 2px;
     }
 
 }
