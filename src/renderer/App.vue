@@ -25,5 +25,6 @@ main {
   position: relative;
   display: flex;
   flex: 1;
+  height: calc(100% - 50px);
 }
 </style>

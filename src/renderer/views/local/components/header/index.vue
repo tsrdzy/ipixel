@@ -12,7 +12,7 @@
                     </span>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item>Action 1</el-dropdown-item>
+                            <el-dropdown-item>全部</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -60,15 +60,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import * as api from '@/apis/resourcesdb/index.js'
 const searchInputValue = ref('');//搜索框绑定的值
-const uncategorizedChecked = ref(false);//未分类标签选中状态
-const tags = [];//标签列表
 const cardSize = ref(0)
 const emit = defineEmits(['change']);
 
 const classifications = [
-    { name: '颜色' },
     { name: '导入时间' },
     { name: '格式' },
     { name: '尺寸' },
@@ -76,7 +74,13 @@ const classifications = [
     { name: '类型' },
     { name: '评分' }
 ];//分类列表
+const currentSelectedList = ref([
 
+])
+onMounted(async () => {
+    console.log(await api.DB_getheaderlist())
+
+})
 </script>
 
 <style lang="scss" scoped>

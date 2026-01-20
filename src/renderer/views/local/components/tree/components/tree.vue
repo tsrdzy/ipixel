@@ -1,13 +1,32 @@
 <template>
     <div class="tree">
-        <el-text>{{ props.type == 'folder' ? '文件夹' : '标签' }}</el-text>
-        <div class="btns">
-            <div class="btn iconfont">&#xeb59;</div>
-            <div class="btn iconfont" @click="add">&#xeb19;</div>
+        <div class="header">
+            <div>
+                <el-text class="iconfont"></el-text>
+                <el-text>{{ props.type == 'folder' ? '文件夹' : '标签' }}</el-text>
+            </div>
+            <div class="btns">
+                <div class="btn iconfont">&#xeb59;</div>
+                <div class="btn iconfont" @click="add">&#xeb19;</div>
+            </div>
         </div>
+        <div class="main">
+            <el-scrollbar height="100%">
+                <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="filter-tree" :data="data"
+                    @node-click="treeClick" @node-expand="treeExpand" @node-collapse="treeCollapse">
+                    <template #default="{ node }">
+                        <el-text class="iconfont" :style="'color:' + node.color + ';'">
+                            {{ props.type == 'folder' ? '&#xeb1a; ' :
+                                '&#xeb2a; '
+                            }}</el-text>
+                        <el-text>{{ node.label }}</el-text>
+                    </template>
+                </el-tree>
+            </el-scrollbar>
+        </div>
+
     </div>
-    <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="filter-tree" :data="data"
-        @node-click="treeClick" @node-expand="treeExpand" @node-collapse="treeCollapse" />
+
 </template>
 
 <script setup>
@@ -78,25 +97,37 @@ function treeCollapse(Node) {
 
 <style lang="scss" scoped>
 .tree {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 24px;
-    padding: 4px;
+    // display: flex;
+    // justify-content: space-between;
+    // align-items: center;
 
-    .btns {
+    height: 100%;
+    .header {
         display: flex;
-        gap: 4px;
+        justify-content: space-between;
+        align-items: center;
+        height: 24px;
+        padding: 4px;
 
-        .btn {
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            border-radius: 3px;
-            text-align: center;
-            border: 1px solid #77777755;
+        .btns {
+            display: flex;
+            gap: 4px;
 
+            .btn {
+                width: 20px;
+                height: 20px;
+                line-height: 20px;
+                border-radius: 3px;
+                text-align: center;
+                border: 1px solid #77777755;
+
+            }
         }
     }
+
+    .main {
+        height: calc(100% - 24px);
+    }
+
 }
 </style>

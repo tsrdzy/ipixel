@@ -4,6 +4,7 @@ import controlbutton from './components/controlbutton'
 import store from './components/store'
 import file from './components/file'
 import db from './components/db'
+import utils from './components/utils'
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -11,6 +12,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('store', store)
     contextBridge.exposeInMainWorld('file', file)
     contextBridge.exposeInMainWorld('db', db)
+    contextBridge.exposeInMainWorld('utils', utils)
   } catch (error) {
     console.error(error)
   }
@@ -20,4 +22,5 @@ if (process.contextIsolated) {
   window.store = store
   window.file = file
   window.db = db
+  window.utils = utils
 }

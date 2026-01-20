@@ -5,8 +5,7 @@ const path = require('path')
 const Store = require('electron-store')
 
 const store = new Store()
-
-function createdb() {
+function initfolder() {
   const folderpath = store.get('resourcespath')
   const folderName = store.get('resourcesname')
   if (!folderpath || !folderName) {
@@ -14,7 +13,11 @@ function createdb() {
   }
   const folderURL = path.join(folderpath, folderName)
   fs.mkdirSync(folderURL, { recursive: true })
+  return folderURL
+}
 
+function createdb() {
+  const folderURL = initfolder()
   const dbURL = path.join(folderURL, 'resources.db')
   const db = new Database(dbURL)
 
@@ -93,15 +96,7 @@ function createdb() {
 }
 
 function createfolder() {
-  const folderpath = store.get('resourcespath')
-  const folderName = store.get('resourcesname')
-  if (!folderpath || !folderName) {
-    return null
-  }
-  const folderURL = path.join(folderpath, folderName)
-  if (!folderURL) return null
-  fs.mkdirSync(folderURL, { recursive: true })
-
+  const folderURL = initfolder()
   const resourcesPath = path.join(folderURL, 'resources')
   const hexChars = '0123456789abcdef'
   let createdCount = 0
@@ -128,10 +123,16 @@ function createfolder() {
 export default () => {
   createfolder()
   createdb()
+
   ipcMain.handle('createfolder', (event) => {
     createfolder()
   })
-  ipcMain.handle('sql', (event, sql) => {
+
+  ipcMain.handle('sql', (event, prepare_sql, ...datas) => {
+    if (!prepare_sql || typeof prepare_sql !== 'string') {
+      return { state: 'error', message: 'SQL 语句无效' }
+    }
+
     const db = createdb()
     if (!db) {
       return {
@@ -140,11 +141,128 @@ export default () => {
         error_code: 'DB_NOT_FOUND'
       }
     }
-    const stmt = db.prepare(sql)
-    if (sql.trim().toUpperCase().startsWith('SELECT')) {
-      return stmt.all()
-    } else {
-      return stmt.run()
+    try {
+      const stmt = db.prepare(prepare_sql)
+      if (prepare_sql.trim().toUpperCase().startsWith('SELECT')) {
+        return stmt.all(...datas)
+      } else {
+        return stmt.run(...datas)
+      }
+    } catch (error) {
+      if (isUniqueConstraintError(error, 'hash')) {
+        return {
+          success: false,
+          message: '数据已存在，hash 值重复',
+          error_code: 'UNIQUE_CONSTRAINT_FAILED',
+          constraint: 'hash',
+          details: '插入的数据与现有记录的 hash 值冲突'
+        }
+      }
+    }
+  })
+
+  ipcMain.handle('savefile', async (event, hash, file_suffix, bufferFile) => {
+    const folderURL = initfolder()
+
+    // 提取哈希前两位作为子文件夹名
+    const hash_prefix = hash.substring(0, 2)
+    const filePath = path.join(folderURL, 'resources', hash_prefix, hash + file_suffix)
+
+    try {
+      // 确保目标文件夹存在
+      const dirPath = path.dirname(filePath)
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true })
+      }
+
+      // 将 ArrayBuffer 转换为 Buffer
+      const bufferData = Buffer.from(bufferFile)
+
+      // 写入文件
+      await fs.promises.writeFile(filePath, bufferData)
+
+      return {
+        success: true,
+        message: '文件保存成功',
+        path: filePath
+      }
+    } catch (error) {
+      console.error('文件保存失败:', error)
+      return {
+        success: false,
+        message: '文件保存失败',
+        data: error
+      }
+    }
+  })
+
+  ipcMain.handle('readfile', async (event, hash) => {
+    const folderURL = initfolder()
+
+    try {
+      // 提取哈希前两位作为子文件夹名
+      const hash_prefix = hash.substring(0, 2)
+      const resourcesPath = path.join(folderURL, 'resources', hash_prefix)
+
+      // 确保资源目录存在
+      if (!fs.existsSync(resourcesPath)) {
+        return {
+          success: false,
+          message: `资源目录不存在: ${resourcesPath}`,
+          data: null
+        }
+      }
+
+      // 读取目录，查找匹配的文件
+      const files = await fs.promises.readdir(resourcesPath)
+
+      // 查找以该hash开头的文件（因为文件名是hash+后缀）
+      const matchingFile = files.find((file) => file.startsWith(hash))
+
+      if (!matchingFile) {
+        return {
+          success: false,
+          message: `未找到对应文件: ${hash}`,
+          data: null
+        }
+      }
+
+      const filePath = path.join(resourcesPath, matchingFile)
+
+      // 检查文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return {
+          success: false,
+          message: `文件不存在: ${filePath}`,
+          data: null
+        }
+      }
+
+      // 读取文件为Buffer
+      const fileBuffer = await fs.promises.readFile(filePath)
+
+      // 获取文件信息（可选）
+      const stats = await fs.promises.stat(filePath)
+      const fileExtension = path.extname(matchingFile)
+
+      return {
+        success: true,
+        message: '文件读取成功',
+        data: fileBuffer, // 返回Buffer对象，前端可以转换为ArrayBuffer或Blob
+        fileInfo: {
+          path: filePath,
+          size: stats.size,
+          extension: fileExtension,
+          lastModified: stats.mtime
+        }
+      }
+    } catch (error) {
+      console.error('文件读取失败:', error)
+      return {
+        success: false,
+        message: `文件读取失败: ${error.message}`,
+        data: null
+      }
     }
   })
 }

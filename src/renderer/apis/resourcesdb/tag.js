@@ -1,5 +1,5 @@
-import convertFlatToTree from '@/utility/convertFlatToTree.js'
-import getExpandedIds from '@/utility/getExpandedIds.js'
+import convertFlatToTree from '@/utils/convertFlatToTree.js'
+import getExpandedIds from '@/utils/getExpandedIds.js'
 const dbtable = 'tags'
 //查询标签列表
 async function DB_gettagslist() {

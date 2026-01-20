@@ -24,6 +24,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "ase-parser": "^0.0.18",
     "better-sqlite3": "^12.6.0",
     "compressorjs": "^1.2.1",
     "electron-store": "^8.2.0",
@@ -32,6 +33,7 @@
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "pinia": "^3.0.4",
+    "sharp": "^0.34.5",
     "vue-i18n": "^11.2.8",
     "vue-router": "^4.6.4"
   },

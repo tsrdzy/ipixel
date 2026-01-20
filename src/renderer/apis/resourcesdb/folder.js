@@ -1,5 +1,5 @@
-import convertFlatToTree from '@/utility/convertFlatToTree.js'
-import getExpandedIds from '@/utility/getExpandedIds.js'
+import convertFlatToTree from '@/utils/convertFlatToTree.js'
+import getExpandedIds from '@/utils/getExpandedIds.js'
 const dbtable = 'folders'
 //查询文件列表
 async function DB_getfolderslist() {
@@ -11,11 +11,22 @@ async function DB_createfolder(parent_folder_id) {
   const secondsTimestamp = Math.floor(Date.now() / 1000)
   if (parent_folder_id != undefined) {
     return await db.sql(
-      `INSERT INTO ${dbtable} (parent_folder_id, name, color ,expanded ,created_at ,updated_at) VALUES (${parent_folder_id}, '新建文件夹', '', false,${secondsTimestamp}, ${secondsTimestamp})`
+      `INSERT INTO ${dbtable} (parent_folder_id, name, color ,expanded ,created_at ,updated_at) VALUES (?, ?, ?, ?,?, ?)`,
+      parent_folder_id,
+      '新建文件夹',
+      '',
+      Number(false),
+      secondsTimestamp,
+      secondsTimestamp
     )
   } else {
     return await db.sql(
-      `INSERT INTO ${dbtable} (name, color,expanded, created_at , updated_at) VALUES ('新建文件夹', '', false, ${secondsTimestamp}, ${secondsTimestamp})`
+      `INSERT INTO ${dbtable} (name, color,expanded, created_at , updated_at) VALUES (?, ?, ?,?, ?)`,
+      '新建文件夹',
+      '',
+      Number(false),
+      secondsTimestamp,
+      secondsTimestamp
     )
   }
 }
@@ -23,18 +34,19 @@ async function DB_createfolder(parent_folder_id) {
 async function DB_updatefolder(id, data = {}) {
   if (id != undefined && data.length != 0) {
     let setdata = ''
+    let _setdata = []
     for (let d in data) {
-      if (data == 'name' || data == 'color') {
-        setdata = setdata + d + " = '" + data[d] + "',"
-      } else {
-        setdata = setdata + d + ' = ' + data[d] + ','
-      }
+      setdata = setdata + d + ' = ?,'
+      _setdata.push(data[d])
     }
     if (setdata.length != 0) {
       setdata = setdata.substring(0, setdata.length - 1)
-      return await db.sql(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`)
+      return await db.sql(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`, ..._setdata)
     } else {
-      return -1
+      return {
+        success: false,
+        message: '更新失败'
+      }
     }
   }
 }
