@@ -1,25 +1,29 @@
 <template>
   <div class="tools">
-    <el-card :key="tooltypes.value" v-for="tooltypes in tools" class="tooltypes">
-      <template #header>
-        <div class="header">
-          <!-- <div class="icon iconfont" v-html="tooltypes.icon"></div> -->
-          <div class="title">{{ tooltypes.label }}</div>
-        </div>
-      </template>
-      <div class="tooltype">
-        <div :key="tool.name" v-for="tool in tooltypes.children" class="tool"
-          @click="dialogTableVisible = true; newtool = tool">
-          <div class="left iconfont" v-html="tool.icon"></div>
-          <div class="right">
-            <div class="title">{{ tool.name }}</div>
-            <div class="content">{{ tool.content }}</div>
+    <el-scrollbar height="100%">
+      <div class="cards">
+        <el-card :key="tooltypes.value" v-for="tooltypes in tools" class="tooltypes">
+          <template #header>
+            <div class="header">
+              <!-- <div class="icon iconfont" v-html="tooltypes.icon"></div> -->
+              <div class="title">{{ tooltypes.label }}</div>
+            </div>
+          </template>
+          <div class="tooltype">
+            <div :key="tool.name" v-for="tool in tooltypes.children" class="tool"
+              @click="dialogTableVisible = true; newtool = tool">
+              <div class="left iconfont" v-html="tool.icon"></div>
+              <div class="right">
+                <div class="title">{{ tool.name }}</div>
+                <div class="content">{{ tool.content }}</div>
+              </div>
+            </div>
           </div>
-        </div>
+
+        </el-card>
       </div>
 
-    </el-card>
-
+    </el-scrollbar>
     <el-dialog :close-on-click-modal="false" draggable v-model="dialogTableVisible" width="80%">
       <template #header>
         {{ newtool.name }}
@@ -104,86 +108,91 @@ const tools = ref([
 
 <style lang="scss" scoped>
 .tools {
-  width: 100%;
+  width: calc(100%);
   height: calc(100% - 16px);
   padding: 8px;
   gap: 8px;
-  display: flex;
-  flex-direction: column;
 
-  .tooltypes {
-    width: 100%;
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    .tooltypes {
+      width: calc(100% - 8px);
+      height: auto;
 
-    .header {
-      display: flex;
-      align-items: center;
-      font-size: 22px;
-      font-weight: bold;
-      height: 40px;
-      line-height: 40px;
-
-      // .icon {
-
-      //   border-radius: 5px;
-      //   width: 40px;
-      //   height: 40px;
-      //   line-height: 40px;
-      //   text-align: center;
-      //   font-size: 42px;
-      // }
-
-      .title {}
-    }
-
-    .tooltype {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-
-      .tool {
-        min-width: 200px;
-        max-width: 200px;
-        border-radius: 5px;
-        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
-        padding: 10px;
-        gap: 10px;
-        font-size: 14px;
-        height: 60px;
+      .header {
         display: flex;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        align-items: center;
+        font-size: 22px;
+        font-weight: bold;
+        height: 40px;
+        line-height: 40px;
 
-        .left {
-          font-size: 50px;
-          width: 60px;
+        // .icon {
+
+        //   border-radius: 5px;
+        //   width: 40px;
+        //   height: 40px;
+        //   line-height: 40px;
+        //   text-align: center;
+        //   font-size: 42px;
+        // }
+
+        .title {}
+      }
+
+      .tooltype {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .tool {
+          min-width: 200px;
+          max-width: 200px;
+          border-radius: 5px;
+          box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+          padding: 10px;
+          gap: 10px;
+          font-size: 14px;
           height: 60px;
-          line-height: 60px;
-          text-align: center;
-        }
+          display: flex;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
 
-        .right {
-          .title {
-            font-weight: bold;
-            font-size: 16px;
-            height: 30px;
-            line-height: 30px;
+          .left {
+            font-size: 50px;
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            text-align: center;
           }
 
-          .content {
-            height: 30px;
-            line-height: 30px;
-            max-width: 140px;
-            color: #777;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+          .right {
+            .title {
+              font-weight: bold;
+              font-size: 16px;
+              height: 30px;
+              line-height: 30px;
+            }
+
+            .content {
+              height: 30px;
+              line-height: 30px;
+              max-width: 140px;
+              color: #777;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
           }
         }
       }
-    }
 
+    }
   }
+
 
 }
 </style>
