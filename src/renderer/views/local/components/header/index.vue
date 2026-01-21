@@ -13,6 +13,9 @@
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item>全部</el-dropdown-item>
+                            <el-dropdown-item :key="option" v-for="option in classification.data">{{
+                                option.option == '' ? '其他' : option.option
+                                }}</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -51,8 +54,6 @@
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
-
-
             </div>
         </div>
 
@@ -65,22 +66,38 @@ import * as api from '@/apis/resourcesdb/index.js'
 const searchInputValue = ref('');//搜索框绑定的值
 const cardSize = ref(0)
 const emit = defineEmits(['change']);
-
-const classifications = [
-    { name: '导入时间' },
-    { name: '格式' },
-    { name: '尺寸' },
-    { name: '文件大小' },
-    { name: '类型' },
-    { name: '评分' }
-];//分类列表
+const getdatas = ref()
+const classifications = ref([
+    {
+        name: '导入时间', value: '', data: [
+            { option: '今天', },
+            { option: '昨天', },
+            { option: '三天', },
+            { option: '七天', },
+            { option: '一个月', },
+            { option: '三个月', },
+            { option: '半年', },
+            { option: '一年', },
+        ]
+    },
+    { name: '格式', value: '', data: [] },
+    { name: '尺寸', value: '', data: [] },
+    { name: '文件大小', value: '', data: [] },
+    // { name: '类型', value: '', data: [] },
+    { name: '评分', value: '', data: [] }
+]);//分类列表
 const currentSelectedList = ref([
 
 ])
 onMounted(async () => {
-    console.log(await api.DB_getheaderlist())
-
+    getlists()
 })
+async function getlists() {
+    getdatas.value = await api.DB_getheaderlist()
+    classifications.value[1].data = getdatas.value.format
+    // classifications.value[4].data = getdatas.value.type
+    // console.log(classifications.value)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -12,6 +12,9 @@ const db = {
   },
   readFile: async (hash) => {
     return await ipcRenderer.invoke('readfile', hash)
+  },
+  deletefile: async (hash, file_suffix) => {
+    return await ipcRenderer.invoke('deletefile', hash, file_suffix)
   }
 }
 export default db

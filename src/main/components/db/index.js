@@ -149,18 +149,15 @@ export default () => {
         return stmt.run(...datas)
       }
     } catch (error) {
-      if (isUniqueConstraintError(error, 'hash')) {
-        return {
-          success: false,
-          message: '数据已存在，hash 值重复',
-          error_code: 'UNIQUE_CONSTRAINT_FAILED',
-          constraint: 'hash',
-          details: '插入的数据与现有记录的 hash 值冲突'
-        }
+      return {
+        success: false,
+        message: '错误',
+        error: error
       }
     }
   })
 
+  //写入文件
   ipcMain.handle('savefile', async (event, hash, file_suffix, bufferFile) => {
     const folderURL = initfolder()
 
@@ -191,11 +188,12 @@ export default () => {
       return {
         success: false,
         message: '文件保存失败',
-        data: error
+        error: error
       }
     }
   })
 
+  //读取文件
   ipcMain.handle('readfile', async (event, hash) => {
     const folderURL = initfolder()
 
@@ -209,7 +207,7 @@ export default () => {
         return {
           success: false,
           message: `资源目录不存在: ${resourcesPath}`,
-          data: null
+          error: null
         }
       }
 
@@ -234,7 +232,7 @@ export default () => {
         return {
           success: false,
           message: `文件不存在: ${filePath}`,
-          data: null
+          error: null
         }
       }
 
@@ -261,7 +259,43 @@ export default () => {
       return {
         success: false,
         message: `文件读取失败: ${error.message}`,
-        data: null
+        error: error
+      }
+    }
+  })
+
+  //删除文件
+  ipcMain.handle('deletefile', async (event, hash, file_suffix) => {
+    const folderURL = initfolder()
+
+    // 提取哈希前两位作为子文件夹名（与保存逻辑保持一致）
+    const hash_prefix = hash.substring(0, 2)
+    const filePath = path.join(folderURL, 'resources', hash_prefix, hash + file_suffix)
+
+    try {
+      // 检查文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return {
+          success: false,
+          message: '文件不存在，无需删除',
+          path: filePath
+        }
+      }
+
+      // 删除文件
+      await fs.promises.unlink(filePath)
+
+      return {
+        success: true,
+        message: '文件删除成功',
+        path: filePath
+      }
+    } catch (error) {
+      console.error('文件删除失败:', error)
+      return {
+        success: false,
+        message: '文件删除失败',
+        error: error.message
       }
     }
   })

@@ -2,9 +2,9 @@
   <div class="local">
     <el-splitter>
       <el-splitter-panel size="170" :collapsible="true" min="170" max="250">
-        <div class="main_left">
-          <Ttree></Ttree>
-        </div>
+        <!-- <div class="main_left"> -->
+          <Tsidebar></Tsidebar>
+        <!-- </div> -->
       </el-splitter-panel>
       <el-splitter-panel max="100%">
         <div class="main_content">
@@ -13,10 +13,10 @@
           <Tsetresources :folderURL="folderURL"></Tsetresources>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel size="150" :collapsible="true" min="150" max="200">
-        <div class="main_right">
-          2
-        </div>
+      <el-splitter-panel size="200" :collapsible="true" min="150" max="200">
+        <!-- <div class="main_right"> -->
+          <Tparticulars></Tparticulars>
+        <!-- </div> -->
       </el-splitter-panel>
     </el-splitter>
   </div>
@@ -26,7 +26,8 @@
 import Theader from '@/views/local/components/header/index.vue';
 import Tcards from '@/views/local/components/cards/index.vue';
 import Tsetresources from '@/views/local/components/setresources/index.vue';
-import Ttree from '@/views/local/components/tree/index.vue'
+import Tsidebar from '@/views/local/components/sidebar/index.vue'
+import Tparticulars from '@/views/local/components/particulars/index.vue'
 import { onMounted, ref } from 'vue';
 const folderURL = ref('');
 onMounted(async () => {
@@ -45,7 +46,6 @@ onMounted(async () => {
   height: 100%;
 
   .main_left {
-    // padding: 4px;
     height: calc(100%);
   }
 

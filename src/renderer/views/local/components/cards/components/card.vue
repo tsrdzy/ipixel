@@ -1,5 +1,5 @@
 <template>
-    <div class="card">
+    <div class="card" @click="clickCard">
         <div class="resources" v-if="file.type == 'image'">
             <img :src="file.base64" alt="无数据">
         </div>
@@ -21,6 +21,8 @@
 <script setup>
 import { watch, ref, onMounted } from 'vue'
 import bufferToBase64 from '@/utils/bufferToBase64.js'
+import { useLocalStore } from '@/pinia/local'
+const localStore = useLocalStore()
 const types = ref({
     '.png': { type: 'image', value: 'image/png' },
     '.jpg': { type: 'image', value: 'image/jpeg' },
@@ -60,7 +62,6 @@ async function getbufferdata() {
     if (data.success) {
         const buffer = data.data
         if (imageTypeArray.value.includes(props.data.format)) {
-            console.log(props.data)
             file.value.base64 = await bufferToBase64(buffer, types.value[extension]?.value)
             file.value.type = 'image'
         } else if (aseTypeArray.value.includes(props.data.format)) {
@@ -73,6 +74,10 @@ async function getbufferdata() {
 
     }
 
+}
+function clickCard() {
+    localStore.currentlySelectedID = props.data.id
+    localStore.currentlySelectedType = 'resources'
 }
 </script>
 

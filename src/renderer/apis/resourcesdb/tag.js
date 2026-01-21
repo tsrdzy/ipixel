@@ -4,7 +4,6 @@ const dbtable = 'tags'
 //查询标签列表
 async function DB_gettagslist() {
   const data = await db.sql(`SELECT * FROM ${dbtable}`)
-  console.log(data)
   return [convertFlatToTree(data), getExpandedIds(data)]
 }
 //创建标签

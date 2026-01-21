@@ -10,9 +10,10 @@
                 <div class="btn iconfont" @click="add">&#xeb19;</div>
             </div>
         </div>
+
         <div class="main">
             <el-scrollbar height="100%">
-                <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="filter-tree" :data="data"
+                <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="tree_1" :data="data"
                     @node-click="treeClick" @node-expand="treeExpand" @node-collapse="treeCollapse">
                     <template #default="{ node }">
                         <el-text class="iconfont" :style="'color:' + node.color + ';'">
@@ -73,8 +74,12 @@ function add() {
 function treeClick(Node) {
     if (props.type == 'folder') {
         localStore.currentlySelectedFolderID = Node.id
+        localStore.currentlySelectedID = Node.id
+        localStore.currentlySelectedType = 'folder'
     } else if (props.type == 'tag') {
         localStore.currentlySelectedTagID = Node.id
+        localStore.currentlySelectedID = Node.id
+        localStore.currentlySelectedType = 'tag'
     }
 }
 //节点被展开
@@ -97,11 +102,10 @@ function treeCollapse(Node) {
 
 <style lang="scss" scoped>
 .tree {
-    // display: flex;
-    // justify-content: space-between;
-    // align-items: center;
-
     height: 100%;
+    display: flex;
+    flex-direction: column;
+
     .header {
         display: flex;
         justify-content: space-between;
@@ -126,7 +130,12 @@ function treeCollapse(Node) {
     }
 
     .main {
-        height: calc(100% - 24px);
+        max-height: calc(100vh - 112px);
+        flex: 1;
+
+        .tree_1 {
+            height: 100%;
+        }
     }
 
 }

@@ -41,6 +41,7 @@ async function DB_updatefolder(id, data = {}) {
     }
     if (setdata.length != 0) {
       setdata = setdata.substring(0, setdata.length - 1)
+      console.log(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`)
       return await db.sql(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`, ..._setdata)
     } else {
       return {
