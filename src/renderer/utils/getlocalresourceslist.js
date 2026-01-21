@@ -49,3 +49,65 @@ async function traverseDirectory(handle, currentPath = '') {
   }
   return fileList // 返回扁平的文件对象数组
 }
+
+// 拖拽上传
+export async function getFilesFromDrop(event) {
+  const items = event.dataTransfer.items
+  const filePromises = []
+
+  // 为每个项目创建处理Promise
+  for (const item of items) {
+    if (item.kind === 'file') {
+      const entry = item.webkitGetAsEntry()
+      if (entry) {
+        filePromises.push(processEntry(entry))
+      } else {
+        // 备用方案：直接获取文件
+        const file = item.getAsFile()
+        if (file) {
+          file.relativePath = file.name
+          filePromises.push([file]) // 包装成数组以保持统一格式
+        }
+      }
+    }
+  }
+
+  // 等待所有Promise完成
+  const results = await Promise.all(filePromises)
+  return results.flat()
+}
+async function processEntry(entry, path = '') {
+  const files = []
+  const currentPath = path ? `${path}/${entry.name}` : entry.name
+
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => {
+      entry.file(resolve, reject)
+    })
+    file.relativePath = currentPath
+    files.push(file)
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader()
+    let entries = []
+
+    // 循环读取直到没有更多条目（每次最多返回100个[7](@ref)）
+    const readEntries = async () => {
+      const batch = await new Promise((resolve) => {
+        reader.readEntries(resolve)
+      })
+      if (batch.length > 0) {
+        entries = entries.concat(batch)
+        await readEntries() // 继续读取直到空数组
+      }
+    }
+
+    await readEntries()
+
+    // 并行处理所有子条目
+    const subFilePromises = entries.map((subEntry) => processEntry(subEntry, currentPath))
+    const subFiles = await Promise.all(subFilePromises)
+    files.push(...subFiles.flat())
+  }
+
+  return files
+}
