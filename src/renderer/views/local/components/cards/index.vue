@@ -1,14 +1,11 @@
 <template>
-
     <el-scrollbar height="100%" style="width: 100%;" v-if="lists.length != 0">
         <div class="cards">
-
             <TCard :key="list.id" :data="list" v-for="list in lists"></TCard>
-
         </div>
     </el-scrollbar>
     <div class="cards empty" v-else>
-        <el-empty>
+        <el-empty description="当前文件夹为空">
             <el-button type="primary" @click="importfile">导入文件</el-button>
             <el-button type="primary" @click="importfolder">导入文件夹</el-button>
         </el-empty>
@@ -24,7 +21,6 @@ import { useLocalStore } from '@/pinia/local'
 const localStore = useLocalStore()
 const lists = ref([])
 onMounted(async () => {
-    // console.log(await db.resource.search({}, true))
     getresourceslist()
 
 })

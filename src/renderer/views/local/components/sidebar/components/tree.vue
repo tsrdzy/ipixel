@@ -13,8 +13,9 @@
 
         <div class="main">
             <el-scrollbar height="100%">
-                <el-tree node-key="id" :default-expanded-keys="expanded" ref="treeRef" class="tree_1" :data="data"
-                    @node-click="treeClick" @node-expand="treeExpand" @node-collapse="treeCollapse">
+                <el-tree :empty-text="`当前${props.type == 'tag' ? '标签' : '文件夹'}列表为空`" node-key="id"
+                    :default-expanded-keys="expanded" ref="treeRef" class="tree_1" :data="data" @node-click="treeClick"
+                    @node-expand="treeExpand" @node-collapse="treeCollapse">
                     <template #default="{ node }">
                         <el-text class="iconfont" :style="'color:' + node.color + ';'">
                             {{ props.type == 'folder' ? '&#xeb1a; ' :

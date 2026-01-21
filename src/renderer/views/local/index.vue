@@ -2,9 +2,7 @@
   <div class="local">
     <el-splitter>
       <el-splitter-panel size="170" :collapsible="true" min="170" max="250">
-        <!-- <div class="main_left"> -->
           <Tsidebar></Tsidebar>
-        <!-- </div> -->
       </el-splitter-panel>
       <el-splitter-panel max="100%">
         <div class="main_content">
@@ -14,9 +12,7 @@
         </div>
       </el-splitter-panel>
       <el-splitter-panel size="200" :collapsible="true" min="150" max="200">
-        <!-- <div class="main_right"> -->
           <Tparticulars></Tparticulars>
-        <!-- </div> -->
       </el-splitter-panel>
     </el-splitter>
   </div>

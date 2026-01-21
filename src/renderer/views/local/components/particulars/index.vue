@@ -21,59 +21,57 @@
             </div>
             <div class="content">
                 <div class="title">类型:</div>
-                <div class="value">{{ resourcesdata[0]?.format }}</div>
+                <el-input size="small" disabled v-model="data.format" class="value"></el-input>
             </div>
             <div class="content">
                 <div class="title">大小:</div>
-                <div class="value">{{ (resourcesdata[0]?.size / 1024) < 1024 ? (resourcesdata[0]?.size /
-                    1024).toFixed(2) + 'kb' : (resourcesdata[0]?.size / 1024).toFixed(2) + 'mb' }}</div>
-                </div>
-                <div class="content">
-                    <div class="title">宽度:</div>
-                    <div class="value">
-                        {{ resourcesdata[0]?.width }}
-                    </div>
-                </div>
-                <div class="content">
-                    <div class="title">高度:</div>
-                    <div class="value">{{ resourcesdata[0]?.height }}</div>
-                </div>
-                <div class="content">
-                    <div class="title">导入时间:</div>
-                    <div class="value">{{ totime(resourcesdata[0]?.created_at) }}</div>
-                </div>
+                <el-input size="small" disabled v-model="size" class="value"></el-input>
             </div>
-            <div class="folder" v-else-if="localStore.currentlySelectedType == 'folder'">
-                <div class="logo iconfont">&#xeb1a;</div>
-                <div class="title">文件夹</div>
-                <div class="content">
-                    <el-text>资源数量:{{ resourcescount }}</el-text>
-                </div>
-                <div class="content">
-                    <el-text>创建时间:</el-text>
-                </div>
-                <div class="content">
-                    <el-text>颜色:</el-text>
-                </div>
+            <div class="content">
+                <div class="title">宽度:</div>
+                <el-input size="small" v-model="data.width" disabled class="value">
+                </el-input>
             </div>
-
-            <div class="folder" v-else-if="localStore.currentlySelectedType == 'tag'">
-                <div class="logo iconfont">&#xeb2a;</div>
-                <div class="title">标签</div>
-                <div class="content">
-                    <el-text>资源数量:{{ resourcescount }}</el-text>
-                </div>
-                <div class="content">
-                    <el-text>创建时间:</el-text>
-                </div>
-                <div class="content">
-                    <el-text>颜色:</el-text>
-                </div>
+            <div class="content">
+                <div class="title">高度:</div>
+                <el-input size="small" disabled v-model="data.height" class="value"></el-input>
             </div>
-            <div class="empty" v-else>
-                <el-empty description="未选择" />
+            <div class="content">
+                <div class="title">导入时间:</div>
+                <el-input size="small" disabled v-model="created_at" class="value"></el-input>
             </div>
         </div>
+        <div class="folder" v-else-if="localStore.currentlySelectedType == 'folder'">
+            <div class="logo iconfont">&#xeb1a;</div>
+            <div class="title">文件夹</div>
+            <div class="content">
+                <el-text>资源数量:{{ resourcescount }}</el-text>
+            </div>
+            <div class="content">
+                <el-text>创建时间:</el-text>
+            </div>
+            <div class="content">
+                <el-text>颜色:</el-text>
+            </div>
+        </div>
+
+        <div class="folder" v-else-if="localStore.currentlySelectedType == 'tag'">
+            <div class="logo iconfont">&#xeb2a;</div>
+            <div class="title">标签</div>
+            <div class="content">
+                <el-text>资源数量:{{ resourcescount }}</el-text>
+            </div>
+            <div class="content">
+                <el-text>创建时间:</el-text>
+            </div>
+            <div class="content">
+                <el-text>颜色:</el-text>
+            </div>
+        </div>
+        <div class="empty" v-else>
+            <el-empty description="未选择" />
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -86,6 +84,9 @@ const resourcesdata = ref({})
 const rating = ref(0)
 const name = ref('')
 const type = ref('')
+const size = ref('')
+const created_at = ref('')
+const data = ref({})
 const tags = ref([])
 watch(() => localStore.currentlySelectedID, async (newData) => {
     if (localStore.currentlySelectedType == 'folder') {
@@ -105,6 +106,11 @@ watch(() => localStore.currentlySelectedID, async (newData) => {
         rating.value = resourcesdata.value[0]?.rating
         name.value = resourcesdata.value[0]?.name.substring(0, resourcesdata.value[0]?.name.lastIndexOf('.'))
         type.value = resourcesdata.value[0]?.name.substring(resourcesdata.value[0]?.name.lastIndexOf('.'))
+        size.value = (resourcesdata.value[0]?.size / 1024) < 1024 ?
+            (resourcesdata.value[0]?.size / 1024).toFixed(2) + 'kb' :
+            (resourcesdata.value[0]?.size / 1024).toFixed(2) + 'mb'
+        created_at.value = totime(resourcesdata.value[0]?.created_at)
+        data.value = resourcesdata.value[0]
         console.log(resourcesdata.value)
     }
 })
@@ -125,6 +131,7 @@ const totime = (data) => {
 <style lang="scss" scoped>
 .particulars {
     padding: 5px;
+
     .folder {
         display: flex;
         flex-direction: column;
