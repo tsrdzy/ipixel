@@ -2,28 +2,61 @@ import calculateSHA256 from '@/utils/calculateSHA256.js'
 import fileToArrayBuffer from '@/utils/fileToArrayBuffer.js'
 import getImageDimensions from '@/utils/getImageDimensions.js'
 //查询资源列表
-async function DB_getresourceslist(where) {
-  const _where = where
+// ;[{ key: 'id', value: '1', operator: '==', type: 'AND' }]
+async function DB_getresourceslist(where = []) {
   let _whereData = ''
   let _whereArray = []
-  if (_where != undefined) {
-    _whereData = 'WHERE '
-    for (var i = 0; i < _where.length; i++) {
-      _whereData = _whereData + _where[i].key + _where[i].operator + '? or '
-      _whereArray.push(_where[i].value)
+  if (where.length != 0) {
+    _whereData = ''
+    for (var i = 0; i < where.length; i++) {
+      _whereData +=
+        (where[i].type == undefined ? '' : where[i].type) +
+        ' ' +
+        where[i].key +
+        ' ' +
+        where[i].operator +
+        ' ? '
+      // console.log()
+      if (where[i].key == 'name') {
+        _whereArray.push('%' + where[i].value + '%')
+      } else {
+        _whereArray.push(where[i].value)
+      }
     }
-    if (_whereArray.length != 0) {
-      _whereData = _whereData.substring(0, _whereData.length - 3)
+    // if (_whereArray.length != 0) {
+    //   if (_whereData[0] == 'A') {
+    //     _whereData = _whereData.substring(4, _whereData.length)
+    //   } else if (_whereData[0] == 'O') {
+    //     _whereData = _whereData.substring(3, _whereData.length)
+    //   }
+    // }
+    if (_whereData[0] == 'O' && _whereData[1] == 'R') {
+      _whereData = _whereData.substring(2, _whereData.length)
     }
+    if (_whereData[0] == 'A' && _whereData[1] == 'N') {
+      _whereData = _whereData.substring(3, _whereData.length)
+    }
+
+    _whereData = 'WHERE' + _whereData
+    console.log(`SELECT * FROM resources ${_whereData}`, ..._whereArray)
   }
   return await db.sql(`SELECT * FROM resources ${_whereData}`, ..._whereArray)
 }
 //查询header需求内容
 async function DB_getheaderlist() {
   const datas = {}
-  datas.type = await db.sql(`SELECT DISTINCT type as option FROM resources`)
   datas.format = await db.sql(`SELECT DISTINCT format as option FROM resources`)
-  return datas
+  let formatArray = datas.format
+  for (var i = 0; i < datas.format.length; i++) {
+    formatArray[i].value = {
+      key: 'format',
+      value: datas.format[i].option,
+      operator: '=',
+      type: 'AND'
+    }
+  }
+  // { key: 'width', value: 16, operator: '<=', type: 'AND' }
+  return formatArray
 }
 
 //添加资源

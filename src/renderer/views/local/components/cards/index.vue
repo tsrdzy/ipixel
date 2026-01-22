@@ -20,7 +20,7 @@
 <script setup>
 import TCard from '@/views/local/components/cards/components/card.vue';
 import * as api from '@/apis/resourcesdb/index.js'
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { getFilesFromHandles, getFolderFromHandles, getFilesFromDrop } from '@/utils/getlocalresourceslist.js'
 import { useLocalStore } from '@/pinia/local'
 const localStore = useLocalStore()
@@ -30,8 +30,21 @@ onMounted(async () => {
     getresourceslist()
 
 })
-async function getresourceslist() {
-    lists.value = await api.DB_getresourceslist()
+watch(() => localStore.getWhere, (newData) => {
+    const data = []
+    for (var key in newData) {
+        if (newData[key] != 'ALL' && newData[key] != '') {
+            if (Array.isArray(newData[key]) && newData[key].length != 0) {
+                data.push(...(newData[key]))
+            } else {
+                data.push(newData[key])
+            }
+        }
+    }
+    getresourceslist(data)
+}, { deep: true })
+async function getresourceslist(data = []) {
+    lists.value = await api.DB_getresourceslist(data)
 }
 function addresources(file) {
     let fid = localStore.currentlySelectedFolderID
@@ -43,9 +56,11 @@ function addresources(file) {
 
 async function importfile() {
     const files = await getFilesFromHandles()
+    if (files == undefined) {
+        return
+    }
     for (var i = 0; i < files.length; i++) {
         const result = await addresources(files[i])
-        console.log(result)
         if (result.success == false) {
             console.log('添加失败')
         } else {
@@ -73,12 +88,10 @@ function treeHandleDragOver(event) {
     event.preventDefault()
     isDragOver.value = true
     event.dataTransfer.dropEffect = 'copy'
-    console.log(1)
 }
 //拖拽离开
 function treeHandleDragLeave(event) {
     event.preventDefault()
-    console.log(2)
     // 只有当鼠标离开整个上传区域时才取消高亮
     if (!event.currentTarget.contains(event.relatedTarget)) {
         isDragOver.value = false
@@ -88,7 +101,6 @@ function treeHandleDragLeave(event) {
 // 处理拖拽放下
 async function treeHandleDrop(event) {
     event.preventDefault()
-    console.log(3)
     isDragOver.value = false
 
     try {
@@ -102,7 +114,6 @@ async function treeHandleDrop(event) {
                 getresourceslist()
             }
         }
-        console.log(files)
     } catch (error) {
         console.error('拖拽上传失败:', error)
         console.log(error)
@@ -125,6 +136,7 @@ async function treeHandleDrop(event) {
     grid-template-columns: repeat(auto-fill, 100px);
     gap: 8px;
     justify-content: space-between;
+    padding: 4px;
 }
 
 .empty {

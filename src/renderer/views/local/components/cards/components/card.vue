@@ -1,5 +1,5 @@
 <template>
-    <div class="card" @click="clickCard">
+    <div class="card" @click="clickCard" :class="localStore.currentlySelectedID == props.data.id ? 'active' : ''">
         <div class="resources" v-if="file.type == 'image'">
             <img :src="file.base64" alt="无数据">
         </div>
@@ -78,16 +78,24 @@ async function getbufferdata() {
 function clickCard() {
     localStore.currentlySelectedID = props.data.id
     localStore.currentlySelectedType = 'resources'
+
+
+
 }
 </script>
 
 <style lang="scss" scoped>
 .card {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     position: relative;
+    border: 2px solid #00000000;
+    border-radius: 2px;
 
-    // overflow: hidden;
+    &:hover {
+        border: 2px solid var(--el-color-primary);
+    }
+
     .resources {
         width: 100%;
         height: 100%;
@@ -129,6 +137,23 @@ function clickCard() {
         padding: 0 2px;
         color: var(--el-text-color-primary);
         margin: 2px;
+    }
+
+}
+
+.active {
+    border: 2px solid var(--el-color-primary);
+
+    .resources {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        img {
+            width: 98%;
+            height: 98%;
+
+        }
     }
 
 }

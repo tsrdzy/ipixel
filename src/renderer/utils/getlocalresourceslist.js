@@ -1,7 +1,11 @@
 export async function getFilesFromHandles() {
-  const fileHandles = await window.showOpenFilePicker({ multiple: true })
-  const filePromises = Array.from(fileHandles).map((handle) => handle.getFile())
-  return await Promise.all(filePromises)
+  try {
+    const fileHandles = await window.showOpenFilePicker({ multiple: true })
+    const filePromises = Array.from(fileHandles).map((handle) => handle.getFile())
+    return await Promise.all(filePromises)
+  } catch (error) {
+    console.log({ error: error })
+  }
 }
 export async function getFolderFromHandles(currentPath = '') {
   const handle = await window.showDirectoryPicker()
