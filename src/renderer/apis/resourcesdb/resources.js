@@ -1,5 +1,6 @@
 import calculateSHA256 from '@/utils/calculateSHA256.js'
 import fileToArrayBuffer from '@/utils/fileToArrayBuffer.js'
+import getImageDimensions from '@/utils/getImageDimensions.js'
 //查询资源列表
 async function DB_getresourceslist(where) {
   const _where = where
@@ -37,13 +38,16 @@ async function DB_createresources(folder_id, file) {
   const format = name.substring(name.lastIndexOf('.'))
   const size = file.size
   const type = file.type
-
+  const dimensions = await getImageDimensions(file)
+  const width = dimensions.width
+  const height = dimensions.height
+  console.log(width, height)
   const savefilemessage = await db.savefile(hash, format, bufferFile)
 
   if (savefilemessage.success == true) {
     return await db.sql(
       `INSERT INTO resources (folder_id, name,hash, hash_prefix , created_at,updated_at,format,size,type,rating,is_gif,width,height,parent_id,is_parent_sprite) 
-  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,0,0,null,false)`,
+  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,?,?,null,false)`,
       folder_id,
       name,
       hash,
@@ -52,7 +56,9 @@ async function DB_createresources(folder_id, file) {
       updated_at,
       format,
       size,
-      type
+      type,
+      width,
+      height
     )
   } else {
     return {

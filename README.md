@@ -20,10 +20,6 @@
   <img src="https://img.shields.io/github/commit-activity/m/tsrdzy/ipixel" alt="GitHub Commit Activity" />
 </p>
 
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs?username=tsrdzy&repo=ipixel&show_icons=true&locale=en&layout=compact" alt="GitHub Top Languages" />
-</p>
-
 ## ✨ 功能特性
 
 ### 📁 素材资源管理
@@ -56,6 +52,55 @@
 
 ### 🔌 插件系统
 - 计划支持
+
+
+## 📋 支持的格式
+
+> **注意**：允许导入任意文件格式，下表列出了具有特殊支持的格式
+
+<div style="overflow-x: auto; width: 100%;">
+
+| 类别 | 格式 | 封面 | 预览 | 编辑 |
+|------|------|------|------|------|
+| **常见图片格式** | jpg、png、jpeg、xpm、xcf、xbm、x3f、wpg、wbmp、tiff、tga、RAF、SVG、SGI、RW2、RAS、PSD、PPM、PNM、WEBP、PICT、PICON、PGM、PFM、PEF、PCX、PCD、PBM、PAM、ORF、NRW、NEF、MNG、JPS、JPE、JP2、JFIF、ICO、HEIF、HEIC、HDR、GIF、EXR、CR2、DNG、DDS、CUR、BMP | ✅ | ✅ | |
+| **常见视频格式** | mp4、ts、vob、rm、ogv、mxf、mts、mpg、mpeg、mjpeg、m4v、m2v、m2ts、hevc、f4v、wtv、asf、3gp、flv、avi、mkv、mov、wmv、webm | ✅ | ✅ | |
+| **常见文档格式** | PDF | ✅ | ✅ | |
+| **常见字体格式** | woff，ttf，sfd，ps，pfb，otf，dfont | ✅ | | |
+| **常见3D格式** | obj、3ds、stl、ply、gltf、glb、off、3dm、fbx、dae、wrl、3mf、IFC、BREP、step、IGES、FCSTD、BIM | ✅ | ✅ | |
+
+</div>
+
+## 📖 使用指南
+
+### 素材资源管理
+1. 打开应用后，点击左侧导航栏的「本地」进入资源管理界面
+2. 点击「导入」按钮或拖拽文件，批量导入资源
+3. 使用分类和标签功能对资源进行组织
+4. 使用搜索框快速查找所需资源
+5. 点击资源即可预览详细信息
+
+### 资源处理工具
+1. 点击左侧导航栏的「工具」进入工具界面
+2. 选择需要使用的工具类型（图片处理、视频处理等）
+3. 按照工具界面提示上传文件并设置参数
+4. 执行处理操作，查看处理结果并保存
+
+### 资源商店
+1. 点击左侧导航栏的「商店」进入资源商店
+2. 浏览或搜索所需资源
+3. 点击下载按钮获取资源到本地库
+
+
+## 🎯 技术栈
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Electron-2B2E3A?style=for-the-badge&logo=electron&logoColor=9FEAF9" alt="Electron" />
+  <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue.js" />
+  <img src="https://img.shields.io/badge/Element%20Plus-E33332?style=for-the-badge&logo=element-plus&logoColor=white" alt="Element Plus" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Sharp-000000?style=for-the-badge&logo=sharp&logoColor=white" alt="Sharp" />
+  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+</p>
 
 ## 🚀 快速开始
 
@@ -94,53 +139,6 @@ npm run build:mac
 # 构建Linux版本
 npm run build:linux
 ```
-
-## 📖 使用指南
-
-### 素材资源管理
-1. 打开应用后，点击左侧导航栏的「本地」进入资源管理界面
-2. 点击「导入」按钮或拖拽文件，批量导入资源
-3. 使用分类和标签功能对资源进行组织
-4. 使用搜索框快速查找所需资源
-5. 点击资源即可预览详细信息
-
-### 资源处理工具
-1. 点击左侧导航栏的「工具」进入工具界面
-2. 选择需要使用的工具类型（图片处理、视频处理等）
-3. 按照工具界面提示上传文件并设置参数
-4. 执行处理操作，查看处理结果并保存
-
-### 资源商店
-1. 点击左侧导航栏的「商店」进入资源商店
-2. 浏览或搜索所需资源
-3. 点击下载按钮获取资源到本地库
-
-## 📋 支持的格式
-
-> **注意**：允许导入任意文件格式，下表列出了具有特殊支持的格式
-
-<div style="overflow-x: auto; width: 100%;">
-
-| 类别 | 格式 | 封面 | 预览 | 编辑 |
-|------|------|------|------|------|
-| **常见图片格式** | jpg、png、jpeg、xpm、xcf、xbm、x3f、wpg、wbmp、tiff、tga、RAF、SVG、SGI、RW2、RAS、PSD、PPM、PNM、WEBP、PICT、PICON、PGM、PFM、PEF、PCX、PCD、PBM、PAM、ORF、NRW、NEF、MNG、JPS、JPE、JP2、JFIF、ICO、HEIF、HEIC、HDR、GIF、EXR、CR2、DNG、DDS、CUR、BMP | ✅ | ✅ | |
-| **常见视频格式** | mp4、ts、vob、rm、ogv、mxf、mts、mpg、mpeg、mjpeg、m4v、m2v、m2ts、hevc、f4v、wtv、asf、3gp、flv、avi、mkv、mov、wmv、webm | ✅ | ✅ | |
-| **常见文档格式** | PDF | ✅ | ✅ | |
-| **常见字体格式** | woff，ttf，sfd，ps，pfb，otf，dfont | ✅ | | |
-| **常见3D格式** | obj、3ds、stl、ply、gltf、glb、off、3dm、fbx、dae、wrl、3mf、IFC、BREP、step、IGES、FCSTD、BIM | ✅ | ✅ | |
-
-</div>
-
-## 🎯 技术栈
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Electron-2B2E3A?style=for-the-badge&logo=electron&logoColor=9FEAF9" alt="Electron" />
-  <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue.js" />
-  <img src="https://img.shields.io/badge/Element%20Plus-E33332?style=for-the-badge&logo=element-plus&logoColor=white" alt="Element Plus" />
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Sharp-000000?style=for-the-badge&logo=sharp&logoColor=white" alt="Sharp" />
-  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
-</p>
 
 ## 🤝 贡献指南
 

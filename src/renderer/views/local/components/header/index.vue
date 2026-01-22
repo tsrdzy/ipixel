@@ -15,7 +15,7 @@
                             <el-dropdown-item>全部</el-dropdown-item>
                             <el-dropdown-item :key="option" v-for="option in classification.data">{{
                                 option.option == '' ? '其他' : option.option
-                                }}</el-dropdown-item>
+                            }}</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -69,7 +69,10 @@ const emit = defineEmits(['change']);
 const getdatas = ref()
 const classifications = ref([
     {
-        name: '导入时间', value: '', data: [
+        name: '导入时间',
+        value: '',
+        isOptions: false,
+        data: [
             { option: '今天', },
             { option: '昨天', },
             { option: '三天', },
@@ -80,11 +83,49 @@ const classifications = ref([
             { option: '一年', },
         ]
     },
-    { name: '格式', value: '', data: [] },
-    { name: '尺寸', value: '', data: [] },
-    { name: '文件大小', value: '', data: [] },
+    { name: '格式', value: '', isOptions: true, data: [] },
+    {
+        name: '尺寸', value: '', isOptions: true, data: [
+            {
+                option: '4px      (<4px)',
+                isSelect: false,
+                value: '4'
+            },
+            { option: '16px     (5px-16x)', },
+            { option: '32px     (17px-32x)', },
+            { option: '64px     (33px-64x)', },
+            { option: '128px    (65px-128x)', },
+            { option: '256px    (129px-256x)', },
+            { option: '512px    (257px-512x)', },
+            { option: '1024px   (513px-1024x)', },
+            { option: '∞        (>1025px)', }
+        ]
+    },
+    {
+        name: '文件大小', value: '', isOptions: true, data: [
+            { option: '<1kb' },
+            { option: '1kb-4kb' },
+            { option: '4kb-8kb' },
+            { option: '8kb-16kb' },
+            { option: '16kb-32kb' },
+            { option: '32kb-64kb' },
+            { option: '64kb-128kb' },
+            { option: '128kb-256kb' },
+            { option: '256kb-512kb' },
+            { option: '512kb-1mb' },
+            { option: '>1mb' },
+        ]
+    },
     // { name: '类型', value: '', data: [] },
-    { name: '评分', value: '', data: [] }
+    {
+        name: '评分', value: '', isOptions: true, data: [
+            { option: '1' },
+            { option: '2' },
+            { option: '3' },
+            { option: '4' },
+            { option: '5' },
+        ]
+    }
 ]);//分类列表
 const currentSelectedList = ref([
 
@@ -95,8 +136,6 @@ onMounted(async () => {
 async function getlists() {
     getdatas.value = await api.DB_getheaderlist()
     classifications.value[1].data = getdatas.value.format
-    // classifications.value[4].data = getdatas.value.type
-    // console.log(classifications.value)
 }
 </script>
 

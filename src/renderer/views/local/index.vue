@@ -48,7 +48,7 @@ onMounted(async () => {
   .main_content {
     flex: 1;
     padding: 4px;
-    height: calc(100% - 8px);
+    height: calc(100% - 56px);
     display: flex;
     flex-direction: column;
   }
