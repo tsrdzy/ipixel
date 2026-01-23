@@ -50,7 +50,7 @@
 <script setup>
 import Tabout from '@/components/sidebar/components/about.vue'
 import Tcheckupdates from '@/components/sidebar/components/checkupdates.vue'
-import Tsettings from '@/components/sidebar/components/settings.vue'
+import Tsettings from '@/components/sidebar/components/settings/index.vue'
 import { useRouter } from 'vue-router';
 import { ref } from 'vue'
 const issetting = ref(false)

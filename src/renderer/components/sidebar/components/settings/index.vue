@@ -22,19 +22,10 @@
                 <el-text size="large">常规</el-text>
             </div>
             <div class="card">
-                <el-text size="small">主题</el-text>
-                <div class="themes">
-                    <div class="theme light"></div>
-                    <div class="theme dark"></div>
-                </div>
+                <Ttheme></Ttheme>
             </div>
             <div class="card">
-                <el-text size="small">语言</el-text>
-                <div class="languages">
-                    <el-select size="small" v-model="value" placeholder="Select">
-                        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                    </el-select>
-                </div>
+                <Tlanguage></Tlanguage>
             </div>
 
         </div>
@@ -42,7 +33,8 @@
 </template>
 
 <script setup>
-
+import Ttheme from './components/theme.vue'
+import Tlanguage from './components/language.vue'
 </script>
 
 <style lang="scss" scoped>
@@ -73,29 +65,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
-        .themes {
-            display: flex;
-            gap: 4px;
 
-            .theme {
-                width: 24px;
-                height: 24px;
-                border: 1px solid var(--el-text-color-primary);
-                border-radius: 5px;
-
-                &:hover {
-                    border: 1px solid var(--el-color-primary);
-                }
-            }
-
-            .dark {
-                background-color: #252525;
-            }
-
-            .light {
-                background-color: #fff;
-            }
-        }
     }
 }
 </style>
