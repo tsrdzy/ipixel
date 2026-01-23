@@ -1,5 +1,6 @@
 <template>
-    <div class="card" @click="clickCard" :class="localStore.currentlySelectedID == props.data.id ? 'active' : ''">
+    <div class="card" @click="clickCard"
+        :class="localStore.currentlySelectedResourcesID == props.data.id ? 'active' : ''">
         <div class="resources" v-if="file.type == 'image'">
             <img :src="file.base64" alt="无数据">
         </div>
@@ -77,6 +78,7 @@ async function getbufferdata() {
 }
 function clickCard() {
     localStore.currentlySelectedID = props.data.id
+    localStore.currentlySelectedResourcesID = props.data.id
     localStore.currentlySelectedType = 'resources'
 
 

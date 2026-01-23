@@ -1,7 +1,7 @@
 <template>
     <div class="tree">
         <div class="header">
-            <div>
+            <div class="title" @click="titleClick">
                 <el-text class="iconfont"></el-text>
                 <el-text>{{ props.type == 'folder' ? '文件夹' : '标签' }}</el-text>
             </div>
@@ -51,6 +51,7 @@ onMounted(() => {
 async function getlist() {
     if (props.type == 'folder') {
         const d = await api.DB_getfolderslist()
+        console.log(d)
         data.value = d[0]
         expanded.value = d[1]
     } else if (props.type == 'tag') {
@@ -77,6 +78,9 @@ function treeClick(Node) {
         localStore.currentlySelectedFolderID = Node.id
         localStore.currentlySelectedID = Node.id
         localStore.currentlySelectedType = 'folder'
+        localStore.getWhere.folder_id =
+            { key: 'folder_id', value: Node.id, operator: '=', type: 'AND' }
+
     } else if (props.type == 'tag') {
         localStore.currentlySelectedTagID = Node.id
         localStore.currentlySelectedID = Node.id
@@ -99,6 +103,17 @@ function treeCollapse(Node) {
         api.DB_updatetag(Node.id, { expanded: false })
     }
 }
+function titleClick() {
+    if (props.type == 'folder') {
+        localStore.currentlySelectedFolderID = 'ALL'
+        localStore.currentlySelectedID = 'ALL'
+        localStore.getWhere.folder_id = 'ALL'
+        localStore.currentlySelectedType = 'folder'
+
+    } else if (props.type == 'tag') {
+
+    }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -113,6 +128,17 @@ function treeCollapse(Node) {
         align-items: center;
         height: 24px;
         padding: 4px;
+
+        .title {
+            height: 24px;
+            line-height: 24px;
+            padding: 0 4px;
+            border-radius: 4px;
+
+            &:hover {
+                background-color: #77777722;
+            }
+        }
 
         .btns {
             display: flex;

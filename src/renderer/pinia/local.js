@@ -6,6 +6,7 @@ export const useLocalStore = defineStore('local', {
     currentlySelectedtagID: undefined, //当前选中标签ID
     currentlySelectedType: undefined, //当前选中类型
     currentlySelectedID: undefined, //当前选中,
+    currentlySelectedResourcesID: undefined, //当前选中资源ID
     currentlySelectedResourcesList: [], //当前选中资源列表
     getWhere: {
       search: '',
@@ -13,7 +14,8 @@ export const useLocalStore = defineStore('local', {
       format: 'ALL',
       width: 'ALL',
       size: 'ALL',
-      rating: 'ALL'
+      rating: 'ALL',
+      folder_id: 'ALL'
     }
   })
 })

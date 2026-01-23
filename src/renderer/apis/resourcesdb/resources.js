@@ -2,7 +2,6 @@ import calculateSHA256 from '@/utils/calculateSHA256.js'
 import fileToArrayBuffer from '@/utils/fileToArrayBuffer.js'
 import getImageDimensions from '@/utils/getImageDimensions.js'
 //查询资源列表
-// ;[{ key: 'id', value: '1', operator: '==', type: 'AND' }]
 async function DB_getresourceslist(where = []) {
   let _whereData = ''
   let _whereArray = []
@@ -16,20 +15,13 @@ async function DB_getresourceslist(where = []) {
         ' ' +
         where[i].operator +
         ' ? '
-      // console.log()
       if (where[i].key == 'name') {
         _whereArray.push('%' + where[i].value + '%')
       } else {
         _whereArray.push(where[i].value)
       }
     }
-    // if (_whereArray.length != 0) {
-    //   if (_whereData[0] == 'A') {
-    //     _whereData = _whereData.substring(4, _whereData.length)
-    //   } else if (_whereData[0] == 'O') {
-    //     _whereData = _whereData.substring(3, _whereData.length)
-    //   }
-    // }
+
     if (_whereData[0] == 'O' && _whereData[1] == 'R') {
       _whereData = _whereData.substring(2, _whereData.length)
     }
@@ -38,7 +30,6 @@ async function DB_getresourceslist(where = []) {
     }
 
     _whereData = 'WHERE' + _whereData
-    console.log(`SELECT * FROM resources ${_whereData}`, ..._whereArray)
   }
   return await db.sql(`SELECT * FROM resources ${_whereData}`, ..._whereArray)
 }
@@ -74,7 +65,6 @@ async function DB_createresources(folder_id, file) {
   const dimensions = await getImageDimensions(file)
   const width = dimensions.width
   const height = dimensions.height
-  console.log(width, height)
   const savefilemessage = await db.savefile(hash, format, bufferFile)
 
   if (savefilemessage.success == true) {

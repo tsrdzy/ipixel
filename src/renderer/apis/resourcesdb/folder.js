@@ -37,11 +37,12 @@ async function DB_updatefolder(id, data = {}) {
     let _setdata = []
     for (let d in data) {
       setdata = setdata + d + ' = ?,'
-      _setdata.push(data[d])
+      _setdata.push(data[d] == false ? 0 : 1)
     }
     if (setdata.length != 0) {
       setdata = setdata.substring(0, setdata.length - 1)
-      console.log(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`)
+
+      console.log(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`, ..._setdata)
       return await db.sql(`UPDATE ${dbtable} SET ${setdata} WHERE id = ${id}`, ..._setdata)
     } else {
       return {

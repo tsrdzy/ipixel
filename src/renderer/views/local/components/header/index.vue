@@ -1,5 +1,8 @@
 <template>
     <div class="header">
+        <div class="top">
+            <el-text>文件夹</el-text>
+        </div>
         <div class="search">
             <el-input @input="search()" class="search_input" v-model="searchInputValue" size="small" placeholder="搜索资源"
                 clearable />
@@ -426,11 +429,10 @@ function getTimeRangeTimestamps(rangeKey) {
 }
 
 function search() {
-    // localStore.getWhere.search = searchInputValue.value
     let data = []
     if (searchInputValue.value != '') {
         for (var i = 0; i < searchInputValue.value.length; i++) {
-            data.push({ key: 'name', value: searchInputValue.value[i]+'', operator: 'LIKE', type: 'OR' })
+            data.push({ key: 'name', value: searchInputValue.value[i] + '', operator: 'LIKE', type: 'OR' })
         }
     }
     localStore.getWhere.search = data
@@ -442,6 +444,13 @@ function search() {
     display: flex;
     flex-direction: column;
     gap: 4px;
+
+    .top {
+        height: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
     .search {
         height: 24px;
