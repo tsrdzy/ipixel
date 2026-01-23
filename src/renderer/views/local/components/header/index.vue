@@ -85,7 +85,7 @@
                     <template #reference>
                         <div class="btn iconfont">&#xeb56;</div>
                     </template>
-                    <el-slider v-model="cardSize" :step="10" show-stops />
+                    <el-slider v-model="cardSize" :max="150" :step="10" />
                 </el-popover>
 
                 <el-dropdown :show-arrow="false" size="small">
@@ -121,7 +121,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import * as api from '@/apis/resourcesdb/index.js'
 import { useLocalStore } from '@/pinia/local';
 const localStore = useLocalStore()
@@ -324,6 +324,10 @@ const rating_lists = ref({
 }
 );//分类列表
 
+watch(() => cardSize.value, (newData) => {
+    localStore.cardSize = cardSize.value
+    store.set('cardSize', cardSize.value)
+})
 
 function handle_created_at(command) {
     localStore.getWhere.created_at = command
@@ -343,6 +347,13 @@ function handle_rating(command) {
 
 onMounted(async () => {
     getlists()
+    const cs = await store.get('cardSize')
+    if (cs == '' && cs == undefined) {
+        cardSize.value = 0
+    } else {
+        cardSize.value = cs
+    }
+
 })
 async function getlists() {
     getdatas.value = await api.DB_getheaderlist()

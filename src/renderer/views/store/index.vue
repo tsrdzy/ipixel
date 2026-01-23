@@ -1,5 +1,5 @@
 <template>
-  <div>store</div>
+  <div>开发中...</div>
 </template>
 
 <script setup></script>

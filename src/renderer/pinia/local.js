@@ -8,6 +8,7 @@ export const useLocalStore = defineStore('local', {
     currentlySelectedID: undefined, //当前选中,
     currentlySelectedResourcesID: undefined, //当前选中资源ID
     currentlySelectedResourcesList: [], //当前选中资源列表
+    cardSize: 0, //card大小
     getWhere: {
       search: '',
       created_at: 'ALL',

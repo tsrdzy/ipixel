@@ -3,7 +3,7 @@
         @dragleave="treeHandleDragLeave">
 
         <el-scrollbar height="100%" style="width: 100%;" v-if="lists.length != 0">
-            <div class="cards_1">
+            <div class="cards_1" :style="`grid-template-columns: repeat(auto-fill, ${100 + cardSize}px);`">
                 <TCard :key="list.id" :data="list" v-for="list in lists"></TCard>
             </div>
         </el-scrollbar>
@@ -26,9 +26,13 @@ import { useLocalStore } from '@/pinia/local'
 const localStore = useLocalStore()
 const lists = ref([])
 const isDragOver = ref(false)
+const cardSize = ref(0)
 onMounted(async () => {
     getresourceslist()
 
+})
+watch(() => localStore.cardSize, (newdate) => {
+    cardSize.value = localStore.cardSize
 })
 watch(() => localStore.getWhere, (newData) => {
     const data = []
@@ -133,7 +137,7 @@ async function treeHandleDrop(event) {
 .cards_1 {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, 100px);
+    // grid-template-columns: repeat(auto-fill, 100px);
     gap: 8px;
     justify-content: space-between;
     padding: 4px;

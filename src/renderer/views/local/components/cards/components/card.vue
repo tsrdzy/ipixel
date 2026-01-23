@@ -1,6 +1,7 @@
 <template>
     <div class="card" @click="clickCard"
-        :class="localStore.currentlySelectedResourcesID == props.data.id ? 'active' : ''">
+        :class="localStore.currentlySelectedResourcesID == props.data.id ? 'active' : ''"
+        :style="`width: ${96 + cardSize}px;height: ${96 + cardSize}px;`">
         <div class="resources" v-if="file.type == 'image'">
             <img :src="file.base64" alt="无数据">
         </div>
@@ -43,6 +44,13 @@ const aseTypeArray = ref(['.ase', '.aseprite'])
 const file = ref({
     type: '',
     base64: ''
+})
+const cardSize = ref(0)
+onMounted(() => {
+    cardSize.value = localStore.cardSize
+})
+watch(() => localStore.cardSize, (newdate) => {
+    cardSize.value = localStore.cardSize
 })
 const props = defineProps(
     {
@@ -88,8 +96,6 @@ function clickCard() {
 
 <style lang="scss" scoped>
 .card {
-    width: 96px;
-    height: 96px;
     position: relative;
     border: 2px solid #00000000;
     border-radius: 2px;
