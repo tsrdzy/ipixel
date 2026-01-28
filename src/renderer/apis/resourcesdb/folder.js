@@ -4,7 +4,11 @@ const dbtable = 'folders'
 //查询文件列表
 async function DB_getfolderslist() {
   const data = await db.sql(`SELECT * FROM ${dbtable}`)
-  return [convertFlatToTree(data), getExpandedIds(data)]
+  if (data.state != 'error') {
+    return [convertFlatToTree(data), getExpandedIds(data)]
+  } else {
+    return [[], []]
+  }
 }
 //创建文件夹
 async function DB_createfolder(parent_folder_id) {

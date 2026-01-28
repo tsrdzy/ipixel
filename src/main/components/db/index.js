@@ -6,8 +6,16 @@ const Store = require('electron-store')
 
 const store = new Store()
 function initfolder() {
-  const folderpath = store.get('resourcespath')
-  const folderName = store.get('resourcesname')
+  let folderpath = ''
+  let folderName = ''
+  const resourcess = store.get('resourcess')
+  for (var i = 0; i < resourcess.length; i++) {
+    if (resourcess[i].isSelect == true) {
+      folderpath = resourcess[i].path
+      folderName = resourcess[i].name
+    }
+  }
+
   if (!folderpath || !folderName) {
     return null
   }
@@ -18,6 +26,9 @@ function initfolder() {
 
 function createdb() {
   const folderURL = initfolder()
+  if (folderURL == null || folderURL == undefined) {
+    return undefined
+  }
   const dbURL = path.join(folderURL, 'resources.db')
   const db = new Database(dbURL)
 
@@ -97,6 +108,13 @@ function createdb() {
 
 function createfolder() {
   const folderURL = initfolder()
+  console.log(1, folderURL)
+  if (folderURL == null || folderURL == undefined) {
+    return {
+      state: 'error',
+      message: '未找到路径'
+    }
+  }
   const resourcesPath = path.join(folderURL, 'resources')
   const hexChars = '0123456789abcdef'
   let createdCount = 0
@@ -125,14 +143,10 @@ export default () => {
   createdb()
 
   ipcMain.handle('createfolder', (event) => {
-    createfolder()
+    return createfolder()
   })
 
   ipcMain.handle('sql', (event, prepare_sql, ...datas) => {
-    if (!prepare_sql || typeof prepare_sql !== 'string') {
-      return { state: 'error', message: 'SQL 语句无效' }
-    }
-
     const db = createdb()
     if (!db) {
       return {
@@ -141,6 +155,10 @@ export default () => {
         error_code: 'DB_NOT_FOUND'
       }
     }
+    if (!prepare_sql || typeof prepare_sql !== 'string') {
+      return { state: 'error', message: 'SQL 语句无效' }
+    }
+
     try {
       const stmt = db.prepare(prepare_sql)
       if (prepare_sql.trim().toUpperCase().startsWith('SELECT')) {

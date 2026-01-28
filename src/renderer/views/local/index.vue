@@ -2,17 +2,18 @@
   <div class="local">
     <el-splitter>
       <el-splitter-panel size="170" :collapsible="true" min="170" max="250">
-          <Tsidebar></Tsidebar>
+        <Tsidebar></Tsidebar>
       </el-splitter-panel>
       <el-splitter-panel max="100%">
         <div class="main_content">
           <Theader></Theader>
           <Tcards></Tcards>
-          <Tsetresources :folderURL="folderURL"></Tsetresources>
+          <!-- <Tcreateresources></Tcreateresources> -->
+          <!-- <Topenresources></Topenresources> -->
         </div>
       </el-splitter-panel>
       <el-splitter-panel size="200" :collapsible="true" min="150" max="200">
-          <Tparticulars></Tparticulars>
+        <Tparticulars></Tparticulars>
       </el-splitter-panel>
     </el-splitter>
   </div>
@@ -21,17 +22,14 @@
 <script setup>
 import Theader from '@/views/local/components/header/index.vue';
 import Tcards from '@/views/local/components/cards/index.vue';
-import Tsetresources from '@/views/local/components/setresources/index.vue';
+// import Tcreateresources from '@/views/local/components/createresources/index.vue';
+// import Topenresources from '@/views/local/components/openresources/index.vue'
 import Tsidebar from '@/views/local/components/sidebar/index.vue'
 import Tparticulars from '@/views/local/components/particulars/index.vue'
 import { onMounted, ref } from 'vue';
-const folderURL = ref('');
-onMounted(async () => {
-  const url = await store.get('resourcespath')
-  if (url != undefined && url != '')
-    folderURL.value = url
-});
-
+onMounted(()=>{
+  
+})
 </script>
 
 <style lang="scss" scoped>

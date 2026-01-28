@@ -110,7 +110,9 @@
                     <div class="btn iconfont">&#xeb1f;</div>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item>Action 1</el-dropdown-item>
+                            <el-dropdown-item><span class="iconfont">&#xeb1f;</span> 宫格</el-dropdown-item>
+                            <el-dropdown-item><span class="iconfont">&#xeb33;</span> 列表</el-dropdown-item>
+                            <el-dropdown-item><span class="iconfont">&#xeb08;</span> 瀑布</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -358,7 +360,6 @@ onMounted(async () => {
 async function getlists() {
     getdatas.value = await api.DB_getheaderlist()
     format_lists.value.data = getdatas.value
-    console.log(format_lists.value)
 }
 
 /**

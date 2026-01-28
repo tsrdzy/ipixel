@@ -55,7 +55,6 @@ import Timagecompression from '@/views/tools/components/imagecompression/index.v
 //   component: import('@/views/tools/components/imagetopixel/index.vue'),
 // })
 
-
 const dialogTableVisible = ref(false);
 const newtool = ref('');
 const tools = ref([
@@ -110,7 +109,9 @@ const tools = ref([
     label: '模型工具',
     value: 'images',
     icon: '&#xeb24;',
-    children: []
+    children: [
+    ]
+
   }
 ])
 

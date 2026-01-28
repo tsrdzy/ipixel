@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useLocalStore = defineStore('local', {
   state: () => ({
+    resourcesURL: '',
     currentlySelectedFolderID: undefined, //当前选中文件夹ID
     currentlySelectedtagID: undefined, //当前选中标签ID
     currentlySelectedType: undefined, //当前选中类型

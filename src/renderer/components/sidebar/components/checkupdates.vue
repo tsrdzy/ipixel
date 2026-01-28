@@ -8,7 +8,7 @@
             <el-button size="small">检查更新</el-button>
         </div>
         <div class="btns">
-            <el-button style="width: 100%;">更新</el-button>
+            <el-button style="width: 100%;" disabled>更新</el-button>
         </div>
     </div>
 </template>

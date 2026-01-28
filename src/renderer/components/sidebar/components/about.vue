@@ -15,9 +15,14 @@
             <div class="btn iconfont">&#xe691;</div>
             <div class="btn iconfont">&#xe61e;</div>
         </div>
-        <div>
-            © 2026 TsrCraft
+        <div class="btns2">
+            <div class="btn">用户协议</div>
+            <div class="btn">法律声明</div>
         </div>
+        <el-text type="info">版权所有</el-text>
+        <el-text type="info">
+            Copyright 2026 © TsrCraft
+        </el-text>
     </div>
 </template>
 
@@ -64,6 +69,17 @@
             font-size: 20px;
             box-shadow: 0 0 1px 1px #77777777;
             border-radius: 4px;
+        }
+    }
+
+    .btns2 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+
+        .btn {
+            text-decoration: underline;
         }
     }
 }

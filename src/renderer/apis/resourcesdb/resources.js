@@ -37,17 +37,22 @@ async function DB_getresourceslist(where = []) {
 async function DB_getheaderlist() {
   const datas = {}
   datas.format = await db.sql(`SELECT DISTINCT format as option FROM resources`)
-  let formatArray = datas.format
-  for (var i = 0; i < datas.format.length; i++) {
-    formatArray[i].value = {
-      key: 'format',
-      value: datas.format[i].option,
-      operator: '=',
-      type: 'AND'
+  console.log(datas.format)
+  if (datas.format.state != 'error') {
+    let formatArray = datas.format
+    for (var i = 0; i < datas.format.length; i++) {
+      formatArray[i].value = {
+        key: 'format',
+        value: datas.format[i].option,
+        operator: '=',
+        type: 'AND'
+      }
     }
+    // { key: 'width', value: 16, operator: '<=', type: 'AND' }
+    return formatArray
+  } else {
+    return []
   }
-  // { key: 'width', value: 16, operator: '<=', type: 'AND' }
-  return formatArray
 }
 
 //添加资源

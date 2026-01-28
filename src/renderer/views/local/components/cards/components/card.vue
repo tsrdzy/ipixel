@@ -15,7 +15,7 @@
             </div>
         </div>
         <div class="tag" size="small">
-            {{ props.data.format.substring(1).toUpperCase() }}
+            {{ props.data.format?.substring(1).toUpperCase() }}
         </div>
     </div>
 </template>
@@ -67,7 +67,7 @@ watch(() => props.data, (newdate) => {
 })
 async function getbufferdata() {
     const data = await db.readFile(props.data.hash)
-    const extension = data.fileInfo.extension
+    const extension = data?.fileInfo?.extension
     if (data.success) {
         const buffer = data.data
         if (imageTypeArray.value.includes(props.data.format)) {
