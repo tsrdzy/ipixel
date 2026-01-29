@@ -60,7 +60,7 @@
       <Tcreateresources @cancel="createresourcescancel"></Tcreateresources>
     </el-dialog>
     <el-dialog draggable v-model="isopenresources" title="打开资源库" width="30%" align-center>
-      <Topenresources @cancel="openresourcescancel"></Topenresources>
+      <Topenresources @cancel="openresourcescancel" @opencreate="opencreate"></Topenresources>
     </el-dialog>
     <el-dialog draggable v-model="issetting" title="设置" width="50%" align-center>
       <Tsettings></Tsettings>
@@ -83,7 +83,6 @@ import Topenresources from '@/components/sidebar/components/openresources/index.
 import { useRouter } from 'vue-router'
 import { onMounted, ref, watch } from 'vue'
 import { useLocalStore } from '@/pinia/local'
-import { fa } from 'element-plus/es/locale/index.mjs'
 const localStore = useLocalStore()
 const issetting = ref(false)
 const iscreateresources = ref(true)
@@ -101,12 +100,10 @@ function createresourcescancel(data) {
 function openresourcescancel(data) {
   isopenresources.value = false
 }
-// function iscreateresources() {
-//     localStore.isShowCreateResources = true
-// }
-// function isopenresources() {
-//     localStore.isShowOpenResources = true
-// }
+function opencreate(data) {
+  iscreateresources.value = true
+}
+
 onMounted(async () => {
   const dbfolder = await db.createfolder()
   if (dbfolder?.state == 'error') {

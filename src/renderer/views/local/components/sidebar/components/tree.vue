@@ -1,16 +1,22 @@
 <template>
   <div class="tree">
-    <div class="header">
+    <div class="header" v-if="!isSearch">
       <div class="title" @click="titleClick">
         <el-text class="iconfont"></el-text>
         <el-text>{{ props.type == 'folder' ? '文件夹' : '标签' }}</el-text>
       </div>
       <div class="btns">
-        <div class="btn iconfont">&#xeb59;</div>
+        <div class="btn iconfont" @click="isSearch = true">&#xeb59;</div>
         <div class="btn iconfont" @click="add">&#xeb19;</div>
       </div>
     </div>
-
+    <div class="search" v-else>
+      <el-input size="small" v-model="filterText" placeholder="搜索文件夹">
+        <template #suffix>
+          <div class="iconfont close" @click="closeSearch">&#xeafc;</div>
+        </template>
+      </el-input>
+    </div>
     <div class="main">
       <el-scrollbar height="100%">
         <el-tree
@@ -20,6 +26,7 @@
           ref="treeRef"
           class="tree_1"
           :data="data"
+          :filter-node-method="filterNode"
           @node-click="treeClick"
           @node-expand="treeExpand"
           @node-collapse="treeCollapse"
@@ -37,12 +44,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref,watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import * as api from '@/apis/resourcesdb/index.js'
 import { useLocalStore } from '@/pinia/local'
 const localStore = useLocalStore()
 const data = ref([])
 const expanded = ref([])
+const isSearch = ref(false)
+const treeRef = ref()
+const filterText = ref('')
 const props = defineProps({
   type: {
     type: String,
@@ -56,6 +66,12 @@ watch(
   () => localStore.resourcesURL,
   (newData) => {
     getlist()
+  }
+)
+watch(
+  () => filterText.value,
+  (val) => {
+    treeRef.value?.filter(val)
   }
 )
 //刷新列表
@@ -119,6 +135,14 @@ function titleClick() {
   } else if (props.type == 'tag') {
   }
 }
+function closeSearch() {
+  filterText.value = ''
+  isSearch.value = false
+}
+const filterNode = (value, data) => {
+  if (!value) return true
+  return data.label.includes(value)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -126,7 +150,24 @@ function titleClick() {
   height: 100%;
   display: flex;
   flex-direction: column;
-
+  .search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 4px;
+    .close {
+      border-radius: 50%;
+      background-color: #77777744;
+      height: 14px;
+      width: 14px;
+      font-size: 8px;
+      line-height: 14px;
+      text-align: center;
+      &:hover {
+        background-color: #77777766;
+      }
+    }
+  }
   .header {
     display: flex;
     justify-content: space-between;

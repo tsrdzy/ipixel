@@ -18,7 +18,9 @@
       </div>
       <div style="display: flex">
         <div class="card card_add"><span class="iconfont">&#xeb4e;</span> 导入资源库</div>
-        <div class="card card_add"><span class="iconfont">&#xeb4e;</span> 创建资源库</div>
+        <div @click="opencreate" class="card card_add">
+          <span class="iconfont">&#xeb4e;</span> 创建资源库
+        </div>
       </div>
     </div>
     <div class="btns">
@@ -34,7 +36,7 @@ import { useLocalStore } from '@/pinia/local'
 const localStore = useLocalStore()
 const lists = ref([])
 const currentlyselected = ref()
-const emit = defineEmits(['cancel'])
+const emit = defineEmits(['cancel', 'opencreate'])
 onMounted(async () => {
   lists.value = await store.get('resourcess')
   for (var i = 0; i < lists.value.length; i++) {
@@ -60,6 +62,10 @@ async function setresources() {
     localStore.resourcesURL = currentlyselected.value.path + '\\' + currentlyselected.value.name
   }
   emit('cancel', false)
+}
+function opencreate() {
+  emit('cancel', false)
+  emit('opencreate', true)
 }
 </script>
 
