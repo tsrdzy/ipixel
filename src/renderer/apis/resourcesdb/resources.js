@@ -97,6 +97,36 @@ async function DB_createresources(folder_id, file) {
   }
 }
 
+//删除资源
+async function DB_deleteresources(id, hash, file_suffix) {
+  if (id != undefined) {
+    const data = await db.deletefile(hash, file_suffix)
+    if (data.success) {
+      return await db.sql(`DELETE FROM resources WHERE id = ${id}`)
+    } else {
+      return { success: false, message: '文件删除失败', data }
+    }
+  }
+}
+
+//修改资源
+async function DB_setresources(id, set = {},) {
+  //(folder_id, name,hash, hash_prefix , created_at,updated_at,format,size,type
+  // ,rating,is_gif,width,height,parent_id,is_parent_sprite)
+  //  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,?,?,null,false)
+  let sets = ''
+  let setsArray = []
+  if (!isEmpty(set)) {
+    for (let key in set) {
+      sets = sets + key + '=? '
+      setsArray.push(set[key])
+    }
+
+    return await db.sql(`UPDATE resources SET ${sets} WHERE id=${id}`, ...setsArray)
+  }
+  return { success: false, message: '无修改项' }
+}
+
 //获取资源总数
 async function DB_getresourcescount(list, key, value) {
   let where = ''
@@ -107,4 +137,15 @@ async function DB_getresourcescount(list, key, value) {
     return await db.sql(`SELECT COUNT(*) FROM ${list}`)
   }
 }
-export { DB_getresourceslist, DB_getheaderlist, DB_createresources, DB_getresourcescount }
+
+function isEmpty(obj) {
+  return Object.keys(obj).length === 0
+}
+export {
+  DB_getresourceslist,
+  DB_getheaderlist,
+  DB_createresources,
+  DB_getresourcescount,
+  DB_deleteresources,
+  DB_setresources
+}

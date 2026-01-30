@@ -11,7 +11,13 @@
         class="cards_1"
         :style="`grid-template-columns: repeat(auto-fill, ${100 + cardSize}px);`"
       >
-        <TCard :key="list.id" :data="list" v-for="list in lists"></TCard>
+        <TCard
+          @click="handleClick"
+          @contextmenu="handleContextmenu($event, list)"
+          :key="list.id"
+          :data="list"
+          v-for="list in lists"
+        ></TCard>
       </div>
     </el-scrollbar>
     <div class="cards_1 empty" v-else>
@@ -21,6 +27,23 @@
       </el-empty>
     </div>
   </div>
+  <el-dropdown
+    ref="dropdownRef"
+    :virtual-ref="triggerRef"
+    :show-arrow="false"
+    :popper-options="{
+      modifiers: [{ name: 'offset', options: { offset: [0, 0] } }]
+    }"
+    virtual-triggering
+    trigger="contextmenu"
+    placement="bottom-start"
+  >
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item @click="right_delete">删除</el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
 </template>
 
 <script setup>
@@ -37,6 +60,31 @@ const localStore = useLocalStore()
 const lists = ref([])
 const isDragOver = ref(false)
 const cardSize = ref(0)
+const currentlyContextmenu = ref()
+const dropdownRef = ref()
+const position = ref({
+  top: 0,
+  left: 0,
+  bottom: 0,
+  right: 0
+})
+const triggerRef = ref({
+  getBoundingClientRect: () => position.value
+})
+const handleClick = () => {
+  dropdownRef.value?.handleClose()
+  currentlyContextmenu.value = null
+}
+const handleContextmenu = (event, list) => {
+  currentlyContextmenu.value = list
+  const { clientX, clientY } = event
+  position.value = DOMRect.fromRect({
+    x: clientX,
+    y: clientY
+  })
+  event.preventDefault()
+  dropdownRef.value?.handleOpen()
+}
 onMounted(async () => {
   getresourceslist()
 })
@@ -136,7 +184,6 @@ function treeHandleDragLeave(event) {
     isDragOver.value = false
   }
 }
-
 // 处理拖拽放下
 async function treeHandleDrop(event) {
   event.preventDefault()
@@ -156,6 +203,30 @@ async function treeHandleDrop(event) {
   } catch (error) {
     console.error('拖拽上传失败:', error)
     console.log(error)
+  }
+}
+//右键菜单 删除
+async function right_delete() {
+  if (currentlyContextmenu.value?.id != undefined) {
+    const data1 = await api.DB_deleteresources(
+      currentlyContextmenu.value?.id,
+      currentlyContextmenu.value?.hash,
+      currentlyContextmenu.value?.format
+    )
+    if (data1.changes == 1) {
+      const data = []
+      const newData = localStore.getWhere
+      for (var key in newData) {
+        if (newData[key] != 'ALL' && newData[key] != '') {
+          if (Array.isArray(newData[key]) && newData[key].length != 0) {
+            data.push(...newData[key])
+          } else {
+            data.push(newData[key])
+          }
+        }
+      }
+      getresourceslist(data)
+    }
   }
 }
 </script>
