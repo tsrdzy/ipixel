@@ -1,10 +1,44 @@
-export async function getFilesFromHandles() {
+export async function getFilesFromHandles(multiple = true, acceptTypes = []) {
   try {
-    const fileHandles = await window.showOpenFilePicker({ multiple: true })
+    // 构建文件类型过滤配置
+    const pickerOptions = {
+      multiple: multiple // 控制是否多选
+    }
+
+    // 如果指定了文件类型，则配置类型过滤器
+    if (acceptTypes.length > 0) {
+      const typeMap = {
+        image: {
+          description: 'Images',
+          accept: { 'image/*': ['.png', '.gif', '.jpeg', '.jpg', '.webp'] }
+        },
+        pdf: {
+          description: 'PDF Documents',
+          accept: { 'application/pdf': ['.pdf'] }
+        },
+        text: {
+          description: 'Text Files',
+          accept: { 'text/plain': ['.txt'] }
+        }
+        // 可根据需要继续添加其他类型
+      }
+
+      pickerOptions.types = acceptTypes.map((type) => typeMap[type.toLowerCase()]).filter(Boolean) // 过滤掉不存在的类型
+
+      // 当指定了文件类型时，排除"所有文件"选项
+      pickerOptions.excludeAcceptAllOption = true
+    }
+
+    const fileHandles = await window.showOpenFilePicker(pickerOptions)
     const filePromises = Array.from(fileHandles).map((handle) => handle.getFile())
     return await Promise.all(filePromises)
   } catch (error) {
     console.log({ error: error })
+    // 可根据错误类型进行更精细的错误处理
+    if (error.name === 'AbortError') {
+      console.log('用户取消了文件选择')
+    }
+    return [] // 返回空数组而不是undefined，更易处理
   }
 }
 export async function getFolderFromHandles(currentPath = '') {

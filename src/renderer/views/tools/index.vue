@@ -9,8 +9,12 @@
             </div>
           </template>
           <div class="tooltype">
-            <div :key="tool.name" v-for="tool in tooltypes.children" class="tool"
-              @click="dialogTableVisible = true; newtool = tool">
+            <div
+              :key="tool.name"
+              v-for="tool in tooltypes.children"
+              class="tool"
+              @click="clicktool(tool)"
+            >
               <div class="left iconfont" v-html="tool.icon"></div>
               <div class="right">
                 <div class="title">{{ tool.name }}</div>
@@ -18,45 +22,33 @@
               </div>
             </div>
           </div>
-
         </el-card>
       </div>
-
     </el-scrollbar>
     <el-dialog :close-on-click-modal="false" draggable v-model="dialogTableVisible" width="80%">
       <template #header>
         {{ newtool.name }}
       </template>
-      <!-- <template v-if="newtool.component == 'imagetopixel'">
-        <AsyncTimagetopixel></AsyncTimagetopixel>
-      </template>
-      <template v-else-if="newtool.component == 'imageformatconversion'">
-        <Timageformatconversion></Timageformatconversion>
-      </template>
-      <template v-else-if="newtool.component == 'icoImageformatconversion'">
-        <TicoImageformatconversion></TicoImageformatconversion>
-      </template>
-      <template v-else-if="newtool.component == 'imagecompression'">
-        <Timagecompression></Timagecompression>
-      </template> -->
-      <component :is="newtool.router"></component>
+      <el-scrollbar height="70vh">
+        <component :is="newtool.router"></component>
+      </el-scrollbar>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, markRaw } from 'vue';
-import Timagetopixel from '@/views/tools/components/imagetopixel/index.vue';
-import Timageformatconversion from '@/views/tools/components/imageformatconversion/index.vue';
-import TicoImageformatconversion from '@/views/tools/components/icoImageformatconversion/index.vue';
-import Timagecompression from '@/views/tools/components/imagecompression/index.vue';
-
+import { ref, markRaw } from 'vue'
+import Timagetopixel from '@/views/tools/components/imagetopixel/index.vue'
+import Timageformatconversion from '@/views/tools/components/imageformatconversion/index.vue'
+import TicoImageformatconversion from '@/views/tools/components/icoImageformatconversion/index.vue'
+import Timagecompression from '@/views/tools/components/imagecompression/index.vue'
+import Tsplitspritesheet from '@/views/tools/components/splitspritesheet/index.vue'
 // const AsyncTimagetopixel = () => ({
 //   component: import('@/views/tools/components/imagetopixel/index.vue'),
 // })
 
-const dialogTableVisible = ref(false);
-const newtool = ref('');
+const dialogTableVisible = ref(false)
+const newtool = ref('')
 const tools = ref([
   {
     label: '图片工具',
@@ -91,6 +83,13 @@ const tools = ref([
         component: 'imagecompression',
         router: markRaw(Timagecompression)
       },
+      {
+        name: '分割精灵图',
+        icon: '&#xeb24;',
+        content: '无损压缩图片',
+        component: 'splitspritesheet',
+        router: markRaw(Tsplitspritesheet)
+      }
     ]
   },
   {
@@ -109,12 +108,13 @@ const tools = ref([
     label: '模型工具',
     value: 'images',
     icon: '&#xeb24;',
-    children: [
-    ]
-
+    children: []
   }
 ])
-
+function clicktool(tool) {
+  dialogTableVisible.value = true
+  newtool.value = tool
+}
 </script>
 
 <style lang="scss" scoped>
@@ -139,8 +139,8 @@ const tools = ref([
         height: 40px;
         line-height: 40px;
 
-
-        .title {}
+        .title {
+        }
       }
 
       .tooltype {
@@ -152,7 +152,7 @@ const tools = ref([
           min-width: 200px;
           max-width: 200px;
           border-radius: 5px;
-          box-shadow: 0 2px 12px 0 rgba(127, 127, 127, .3);
+          box-shadow: 0 2px 12px 0 rgba(127, 127, 127, 0.3);
           padding: 10px;
           gap: 10px;
           // font-size: 14px;
@@ -189,10 +189,7 @@ const tools = ref([
           }
         }
       }
-
     }
   }
-
-
 }
 </style>

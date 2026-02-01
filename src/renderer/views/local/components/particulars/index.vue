@@ -16,7 +16,25 @@
       <div class="content">
         <div class="title">标签:</div>
         <div class="value">
-          <el-input-tag v-model="tags" size="small" placeholder="标签" aria-label="标签" />
+          <!-- <el-input-tag v-model="tags" size="small" placeholder="标签" aria-label="标签" /> -->
+          <el-select
+            @change="settag"
+            v-model="tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            :reserve-keyword="false"
+            placeholder="标签"
+            size="small"
+          >
+            <el-option
+              v-for="item in tagoptions"
+              :key="item?.id"
+              :label="item?.label"
+              :value="item?.id"
+            />
+          </el-select>
         </div>
       </div>
       <div class="content">
@@ -44,6 +62,16 @@
       <div class="content">
         <div class="title">导入时间:</div>
         <el-input size="small" disabled v-model="created_at" class="value"></el-input>
+      </div>
+      <div class="content">
+        <el-button size="small" :disabled="!(resourcesdata[0]?.format == '.png')"
+          >分割精灵图</el-button
+        >
+      </div>
+      <div class="content">
+        <el-button size="small" :disabled="!(resourcesdata[0]?.format == '.png')"
+          >创建动画</el-button
+        >
       </div>
     </div>
     <div class="folder" v-else-if="localStore.currentlySelectedType == 'folder'">
@@ -80,9 +108,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useLocalStore } from '@/pinia/local'
 import * as api from '@/apis/resourcesdb/resources.js'
+import * as apitag from '@/apis/resourcesdb/tag.js'
 const localStore = useLocalStore()
 const resourcescount = ref(0)
 const resourcesdata = ref({})
@@ -93,6 +122,11 @@ const size = ref('')
 const created_at = ref('')
 const data = ref({})
 const tags = ref([])
+const tagoptions = ref([])
+onMounted(async () => {
+  tagoptions.value = (await apitag.DB_gettagslist())[0]
+  console.log(tagoptions.value)
+})
 watch(
   () => localStore.currentlySelectedID,
   async (newData) => {
@@ -124,7 +158,6 @@ watch(
           : (resourcesdata.value[0]?.size / 1024).toFixed(2) + 'mb'
       created_at.value = totime(resourcesdata.value[0]?.created_at)
       data.value = resourcesdata.value[0]
-      console.log(resourcesdata.value)
     }
   }
 )
@@ -145,6 +178,9 @@ async function nameBlur() {
 }
 async function setRating(ra) {
   await api.DB_setresources(data.value.id, { rating: ra })
+}
+async function settag() {
+  console.log(tags.value)
 }
 </script>
 
