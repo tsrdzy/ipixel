@@ -6,10 +6,12 @@
           <div>选择</div>
         </template>
         <div class="cards cards_1">
-          <div v-if="filebase64 == ''" @click="clickgetimages" class="uploadbutton">+</div>
+          <div v-if="filebase64 == ''" @click="clickgetimages()" class="uploadbutton">+</div>
           <div class="img" v-else>
             <img ref="img" :src="filebase64" alt="" />
-            <div @click="deleteimg" class="delete iconfont">&#xeb6c;</div>
+            <div v-if="props.currentPicture == ''" @click="deleteimg" class="delete iconfont">
+              &#xeb6c;
+            </div>
             <div
               v-if="operation == 'noauto'"
               ref="dividers"
@@ -157,6 +159,10 @@ import splitSprite from '@/utils/splitSprite.js'
 import FileSaver from 'file-saver'
 import JSZip from 'jszip'
 import { ref, watch } from 'vue'
+import { useLocalStore } from '@/pinia/local'
+import * as api from '@/apis/resourcesdb/index.js'
+
+const localStore = useLocalStore()
 const filename = ref('') //图片名字
 const filebase64 = ref('')
 const original_width = ref(0) //原图宽度
@@ -179,6 +185,32 @@ const height_ratio = ref(0) //高度比例
 const dividers = ref() //ref
 const img = ref() //ref
 
+const props = defineProps({
+  currentPicture: {
+    type: String,
+    default: ''
+  },
+  parentID: {
+    type: Number,
+    default: undefined
+  }
+})
+watch(
+  () => props.currentPicture,
+  (newData) => {
+    original_width.value = 0
+    original_height.value = 0
+    scale_width.value = 0
+    scale_height.value = 0
+    img_width.value = 64
+    img_height.value = 64
+    img_margin.value = 0
+    img_lrm.value = 0
+    img_tbm.value = 0
+    operation.value = 'auto'
+    clickgetimages(newData)
+  }
+)
 const dividernumber = () => {
   // 1. 计算容器内部的实际可用宽度和高度（减去总外边距）
   const availableWidth = original_width.value - img_margin.value * 2
@@ -205,14 +237,22 @@ const dividernumber = () => {
 function deleteimg() {
   filebase64.value = ''
 }
-async function clickgetimages() {
-  const file = await getFilesFromHandles(false, ['image'])
-  filename.value = file[0].name
-  filebase64.value = await fileToBase64(file)
-  const wh = await getImageDimensions(filebase64.value[0])
+async function clickgetimages(file1) {
+  console.log(file1)
+  let wh = ''
+  if (file1 == undefined) {
+    const file = await getFilesFromHandles(false, ['image'])
+    filename.value = file[0].name
+    filebase64.value = await fileToBase64(file)
+    wh = await getImageDimensions(filebase64.value[0])
+  } else {
+    filebase64.value = file1
+    wh = await getImageDimensions(filebase64.value)
+  }
+
   original_width.value = wh.width
   original_height.value = wh.height
-  if (wh.width >= wh.height) {
+  if (wh?.width >= wh?.height) {
     img.value.style.width = '300px'
     img.value.style.height = 'auto'
   } else {
@@ -268,14 +308,37 @@ async function savelocal() {
   for (let i = 0; i < spriteresult.value.length; i++) {
     zip.file(
       spriteresult.value[i].name,
-     spriteresultbase64.value[i].replace(/^data:image\/(png|jpg|jpeg|gif|webp|bmp);base64,/, ''),
-      { base64: true })
+      spriteresultbase64.value[i].replace(/^data:image\/(png|jpg|jpeg|gif|webp|bmp);base64,/, ''),
+      { base64: true }
+    )
   }
   zip.generateAsync({ type: 'blob' }).then((content) => {
     FileSaver.saveAs(content, 'images.zip')
   })
 }
-function saveresources() {}
+async function saveresources() {
+  const files = spriteresult.value
+  for (var i = 0; i < files.length; i++) {
+    const result = await addresources(files[i])
+    if (result.success == false) {
+      console.log('添加失败')
+    } else {
+      console.log('添加完成添加了:' + result.changes + '张图片')
+    }
+  }
+}
+function addresources(file) {
+  let fid = localStore.currentlySelectedFolderID
+  if (fid == undefined) {
+    fid = null
+  }
+  console.log('ID:', props.parentID)
+  if (props.currentPicture != undefined && props.parentID != undefined) {
+    return api.DB_createresources(fid, file, props.parentID)
+  } else {
+    return api.DB_createresources(fid, file)
+  }
+}
 </script>
 
 <style lang="scss" scoped>

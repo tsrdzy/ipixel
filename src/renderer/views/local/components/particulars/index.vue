@@ -38,6 +38,10 @@
         </div>
       </div>
       <div class="content">
+        <div class="title">父图片ID:</div>
+        <el-input size="small" disabled v-model="data.parent_id" class="value"></el-input>
+      </div>
+      <div class="content">
         <div class="title">评分:</div>
         <div class="value">
           <el-rate @change="setRating" v-model="rating" :max="5" :allow-half="false" size="small" />
@@ -64,12 +68,18 @@
         <el-input size="small" disabled v-model="created_at" class="value"></el-input>
       </div>
       <div class="content">
-        <el-button size="small" :disabled="!(resourcesdata[0]?.format == '.png')"
+        <el-button
+          size="small"
+          @click="clicksplitbtn"
+          :disabled="!(resourcesdata[0]?.format == '.png')"
           >分割精灵图</el-button
         >
       </div>
       <div class="content">
-        <el-button size="small" :disabled="!(resourcesdata[0]?.format == '.png')"
+        <el-button
+          size="small"
+          @click="clickcreateanibtn"
+          :disabled="!(resourcesdata[0]?.format == '.png')"
           >创建动画</el-button
         >
       </div>
@@ -105,6 +115,10 @@
       <el-empty description="未选择" />
     </div>
   </div>
+  <el-dialog :close-on-click-modal="false" draggable v-model="issplits" width="80%">
+    <Tsplitspritesheet :currentPicture="currentpicture" :parentID="parentID"></Tsplitspritesheet>
+    <!-- <tsplitspritesheet></tsplitspritesheet> -->
+  </el-dialog>
 </template>
 
 <script setup>
@@ -112,6 +126,8 @@ import { onMounted, ref, watch } from 'vue'
 import { useLocalStore } from '@/pinia/local'
 import * as api from '@/apis/resourcesdb/resources.js'
 import * as apitag from '@/apis/resourcesdb/tag.js'
+import Tsplitspritesheet from '@/views/tools/components/splitspritesheet/index.vue'
+import bufferToBase64 from '@/utils/bufferToBase64.js'
 const localStore = useLocalStore()
 const resourcescount = ref(0)
 const resourcesdata = ref({})
@@ -123,6 +139,10 @@ const created_at = ref('')
 const data = ref({})
 const tags = ref([])
 const tagoptions = ref([])
+const issplits = ref(false)
+
+const currentpicture = ref('')
+const parentID = ref(undefined)
 onMounted(async () => {
   tagoptions.value = (await apitag.DB_gettagslist())[0]
   console.log(tagoptions.value)
@@ -158,9 +178,19 @@ watch(
           : (resourcesdata.value[0]?.size / 1024).toFixed(2) + 'mb'
       created_at.value = totime(resourcesdata.value[0]?.created_at)
       data.value = resourcesdata.value[0]
+      console.log(data.value)
     }
   }
 )
+async function clicksplitbtn() {
+  const resourcesBinary = await api.DB_getresources(data.value.hash)
+  if (resourcesBinary.success == true) {
+    issplits.value = true
+    currentpicture.value = await bufferToBase64(resourcesBinary.data)
+    parentID.value = resourcesdata.value[0].id
+  }
+}
+function clickcreateanibtn() {}
 const totime = (date1) => {
   const date = new Date(date1 * 1000) // 时间戳需要毫秒数，所以乘以1000
 

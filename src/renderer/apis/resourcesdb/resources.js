@@ -56,7 +56,7 @@ async function DB_getheaderlist() {
 }
 
 //添加资源
-async function DB_createresources(folder_id, file) {
+async function DB_createresources(folder_id, file, parent_id = undefined) {
   const name = file.name
   const bufferFile = await fileToArrayBuffer(file)
   const secondsTimestamp = Math.floor(Date.now() / 1000)
@@ -71,11 +71,16 @@ async function DB_createresources(folder_id, file) {
   const width = dimensions.width
   const height = dimensions.height
   const savefilemessage = await db.savefile(hash, format, bufferFile)
-
+  if (parent_id == '' || parent_id == undefined) {
+    parent_id = null
+  }
+  if (parent_id != null) {
+    await DB_setresources(parent_id, (set = { is_parent_sprite: 1 }))
+  }
   if (savefilemessage.success == true) {
     return await db.sql(
       `INSERT INTO resources (folder_id, name,hash, hash_prefix , created_at,updated_at,format,size,type,rating,is_gif,width,height,parent_id,is_parent_sprite) 
-  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,?,?,null,false)`,
+  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,?,?,?,false)`,
       folder_id,
       name,
       hash,
@@ -86,7 +91,8 @@ async function DB_createresources(folder_id, file) {
       size,
       type,
       width,
-      height
+      height,
+      parent_id
     )
   } else {
     return {
@@ -108,9 +114,16 @@ async function DB_deleteresources(id, hash, file_suffix) {
     }
   }
 }
-
+//读取二进制资源
+async function DB_getresources(hash) {
+  if (hash != undefined) {
+    return await db.readFile(hash)
+  } else {
+    return { success: false, message: 'hash不能为空' }
+  }
+}
 //修改资源
-async function DB_setresources(id, set = {},) {
+async function DB_setresources(id, set = {}) {
   //(folder_id, name,hash, hash_prefix , created_at,updated_at,format,size,type
   // ,rating,is_gif,width,height,parent_id,is_parent_sprite)
   //  VALUES (?, ?, ?,?, ?, ?, ?, ?,?,0,false,?,?,null,false)
@@ -145,6 +158,7 @@ export {
   DB_getresourceslist,
   DB_getheaderlist,
   DB_createresources,
+  DB_getresources,
   DB_getresourcescount,
   DB_deleteresources,
   DB_setresources
