@@ -1,0 +1,98 @@
+@import './base.css';
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ====== 通用按钮 ====== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  background: var(--bg-mute);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  background: var(--bg-hover);
+}
+.btn-text {
+  padding: 6px 10px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.btn-text:hover {
+  color: var(--text-1);
+  background: var(--bg-mute);
+}
+
+/* ====== 输入框 ====== */
+.input,
+.textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus,
+.textarea:focus {
+  border-color: var(--primary);
+}
+.textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+/* ====== 标签芯片 ====== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  background: var(--tag-bg);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 20px;
+}
+.chip.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.chip-removable {
+  cursor: default;
+}
+.chip-removable .chip-x {
+  cursor: pointer;
+  opacity: 0.6;
+}
+.chip-removable .chip-x:hover {
+  opacity: 1;
+}
