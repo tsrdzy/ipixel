@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
 import iconPng from '../assets/icon.png'
 
+const { t } = useI18n()
 const {
   state,
   createLibrary,
@@ -15,7 +17,7 @@ const {
 } = useStore()
 
 const folderPath = ref('')
-const libraryName = ref('我的模型库')
+const libraryName = ref(t('init.title'))
 const error = ref('')
 const busy = ref(false)
 const activeTab = ref('create') // create | open
@@ -43,21 +45,21 @@ async function selectFolder() {
 async function handleCreate() {
   error.value = ''
   if (!folderPath.value) {
-    error.value = '请先选择一个空文件夹'
-    ElMessage.warning('请先选择一个空文件夹')
+    error.value = t('init.openDesc')
+    ElMessage.warning(t('init.openDesc'))
     return
   }
   if (!libraryName.value.trim()) {
-    error.value = '请填写资源库名称'
-    ElMessage.warning('请填写资源库名称')
+    error.value = t('init.libraryName')
+    ElMessage.warning(t('init.libraryName'))
     return
   }
   busy.value = true
   try {
     await createLibrary(folderPath.value, libraryName.value.trim())
-    ElMessage.success('资源库已创建')
+    ElMessage.success(t('init.create') + t('common.ok'))
   } catch (e) {
-    error.value = e.message || '创建失败'
+    error.value = e.message || t('init.creating') + t('common.failed')
     ElMessage.error(error.value)
   } finally {
     busy.value = false
@@ -93,11 +95,11 @@ async function handleBrowseOpen() {
 async function handleRemove(path) {
   try {
     await ElMessageBox.confirm(
-      '仅从列表移除记录，不会删除磁盘上的文件。',
-      '确定从列表中移除该资源库吗？',
+      t('init.confirmDelete'),
+      t('init.deleteLibrary'),
       {
-        confirmButtonText: '确定移除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
@@ -106,9 +108,9 @@ async function handleRemove(path) {
   }
   try {
     await removeLibrary(path)
-    ElMessage.success('已从列表移除')
+    ElMessage.success(t('common.ok'))
   } catch (e) {
-    ElMessage.error(e.message || '移除失败')
+    ElMessage.error(e.message || t('common.failed'))
   }
 }
 
@@ -129,47 +131,47 @@ function formatDate(iso) {
       <div class="logo">
         <img :src="iconPng" alt="iModel" />
       </div>
-      <h1>iModel 模型库</h1>
-      <p class="subtitle">本地 3D 模型资源管理工具</p>
+      <h1>iModel</h1>
+      <p class="subtitle">{{ t('init.title') }}</p>
 
       <!-- 选项卡切换 -->
       <div class="tabs-wrapper">
         <el-tabs v-model="activeTab" class="init-tabs" @tab-change="error = ''">
           <!-- 创建新资源库 -->
-          <el-tab-pane label="创建新资源库" name="create">
+          <el-tab-pane :label="t('init.create')" name="create">
             <div class="tab-content">
               <el-form label-position="top" class="create-form">
-                <el-form-item label="资源库名称">
-                  <el-input v-model="libraryName" placeholder="为你的模型库命名" />
+                <el-form-item :label="t('init.libraryName')">
+                  <el-input v-model="libraryName" :placeholder="t('init.libraryName')" />
                 </el-form-item>
 
-                <el-form-item label="文件夹位置">
-                  <el-input :model-value="folderPath" placeholder="选择一个空文件夹" readonly>
+                <el-form-item :label="t('init.libraryPath')">
+                  <el-input :model-value="folderPath" :placeholder="t('init.openDesc')" readonly>
                     <template #append>
-                      <el-button @click="selectFolder"><i class="iconfont icon-folder"></i> 浏览</el-button>
+                      <el-button @click="selectFolder"><i class="iconfont icon-folder"></i> {{ t('init.browse') }}</el-button>
                     </template>
                   </el-input>
-                  <div class="hint">所选文件夹必须为空，否则无法创建</div>
+                  <div class="hint">{{ t('init.createDesc') }}</div>
                 </el-form-item>
 
                 <el-button type="primary" class="btn-block" :loading="busy" @click="handleCreate">
-                  <i class="iconfont icon-plus"></i> 创建资源库
+                  <i class="iconfont icon-plus"></i> {{ t('init.create') }}
                 </el-button>
               </el-form>
             </div>
           </el-tab-pane>
 
           <!-- 打开已有资源库 -->
-          <el-tab-pane label="打开资源库" name="open">
+          <el-tab-pane :label="t('init.open')" name="open">
             <div class="tab-content">
               <div class="open-header">
                 <el-button link @click="handleBrowseOpen" :disabled="busy">
-                  <i class="iconfont icon-folder-plus"></i> 浏览打开
+                  <i class="iconfont icon-folder-plus"></i> {{ t('init.browse') }}{{ t('init.open') }}
                 </el-button>
               </div>
 
-              <el-empty v-if="sortedLibraries.length === 0" description="暂无资源库记录">
-                <div class="hint">创建一个新库，或点击"浏览打开"选择已有库文件夹</div>
+              <el-empty v-if="sortedLibraries.length === 0" :description="t('init.empty')">
+                <div class="hint">{{ t('init.createDesc') }}</div>
               </el-empty>
 
               <ul v-else class="lib-list">
@@ -193,7 +195,7 @@ function formatDate(iso) {
                     <el-button
                       circle
                       size="small"
-                      title="打开"
+                      :title="t('init.open')"
                       :disabled="busy"
                       @click.stop="handleOpenExisting(lib.path)"
                     >
@@ -203,7 +205,7 @@ function formatDate(iso) {
                       circle
                       size="small"
                       type="danger"
-                      title="从列表移除"
+                      :title="t('init.deleteLibrary')"
                       @click.stop="handleRemove(lib.path)"
                     >
                       <i class="iconfont icon-trash-alt"></i>

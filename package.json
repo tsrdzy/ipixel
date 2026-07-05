@@ -24,7 +24,8 @@
     "electron-updater": "^6.3.9",
     "element-plus": "^2.14.2",
     "fflate": "^0.8.3",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "vue-i18n": "^9.14.4"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^2.1.0",

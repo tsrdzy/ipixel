@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, shallowRef, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
@@ -7,6 +8,7 @@ import ModelCard from '../components/ModelCard.vue'
 import ModelViewer from '../components/ModelViewer.vue'
 
 const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll, deleteModel } = useStore()
+const { t } = useI18n()
 
 const keyword = ref('')
 const sortBy = ref('uploadTime') // uploadTime | fileSize | name | dimension
@@ -30,14 +32,14 @@ let lastMouseY = 0
 /** 添加标签到全局标签池 */
 async function handleAddTag() {
   try {
-    const { value } = await ElMessageBox.prompt('请输入标签名称', '添加标签', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputValidator: (v) => (v && v.trim() ? true : '标签名不能为空')
+    const { value } = await ElMessageBox.prompt(t('home.enterTag'), t('common.add') + t('common.tags'), {
+      confirmButtonText: t('common.ok'),
+      cancelButtonText: t('common.cancel'),
+      inputValidator: (v) => (v && v.trim() ? true : t('home.enterTag'))
     })
     await window.api.tags.add(value.trim())
     await loadAll()
-    ElMessage.success('标签已添加')
+    ElMessage.success(t('home.tagAdded'))
   } catch (e) {
     // 用户取消
   }
@@ -49,14 +51,14 @@ async function handleLibCommand(cmd) {
     switchLibrary()
   } else if (cmd === 'rename') {
     try {
-      const { value } = await ElMessageBox.prompt('请输入新的资源库名称', '重命名', {
+      const { value } = await ElMessageBox.prompt(t('init.libraryName'), t('init.rename'), {
         inputValue: state.library?.name || '',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputValidator: (v) => (v && v.trim() ? true : '名称不能为空')
+        confirmButtonText: t('common.ok'),
+        cancelButtonText: t('common.cancel'),
+        inputValidator: (v) => (v && v.trim() ? true : t('common.name') + t('common.empty'))
       })
       await renameLibrary(value.trim())
-      ElMessage.success('已重命名')
+      ElMessage.success(t('common.ok'))
     } catch (e) {
       // 用户取消
     }
@@ -318,11 +320,11 @@ async function handleBatchDelete() {
   if (selectedIds.value.length === 0) return
   try {
     await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedIds.value.length} 个模型吗？删除后无法恢复。`,
-      '批量删除',
+      t('home.confirmBatchDelete', { count: selectedIds.value.length }),
+      t('home.batchDelete'),
       {
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -336,21 +338,21 @@ async function handleBatchDelete() {
       await deleteModel(String(id))
       successCount++
     } catch (e) {
-      console.error('批量删除失败:', id, e)
+      console.error(t('home.deletionFailed') + ':', id, e)
     }
   }
   await loadAll()
   clearSelection()
-  ElMessage.success(`已删除 ${successCount} 个模型`)
+  ElMessage.success(t('home.deletionSuccess'))
 }
 
 async function handleBatchAddTag() {
   if (selectedIds.value.length === 0) return
   try {
-    const { value } = await ElMessageBox.prompt('请输入要添加的标签名称', '批量添加标签', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputValidator: (v) => (v && v.trim() ? true : '标签名不能为空')
+    const { value } = await ElMessageBox.prompt(t('home.enterTag'), t('home.batchAddTag'), {
+      confirmButtonText: t('common.ok'),
+      cancelButtonText: t('common.cancel'),
+      inputValidator: (v) => (v && v.trim() ? true : t('home.enterTag'))
     })
     const tag = value.trim()
     for (const id of selectedIds.value) {
@@ -363,13 +365,13 @@ async function handleBatchAddTag() {
             const patch = { tags: [...model.tags] }
             await window.api.models.update(String(id), patch)
           } catch (e) {
-            console.error('批量添加标签失败:', id, e)
+            console.error(t('home.batchAddTag') + t('common.failed') + ':', id, e)
           }
         }
       }
     }
     await loadAll()
-    ElMessage.success(`已为 ${selectedIds.value.length} 个模型添加标签 "${tag}"`)
+    ElMessage.success(t('home.tagsAdded', { count: selectedIds.value.length }))
   } catch (e) {
     // 用户取消
   }
@@ -769,8 +771,8 @@ function closeBatchDialog() {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="rename">重命名</el-dropdown-item>
-              <el-dropdown-item command="switch" divided>切换资源库</el-dropdown-item>
+              <el-dropdown-item command="rename">{{ t('init.rename') }}</el-dropdown-item>
+              <el-dropdown-item command="switch" divided>{{ t('init.switchLibrary') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -778,7 +780,7 @@ function closeBatchDialog() {
       <div class="topbar-center">
         <el-input
           v-model="keyword"
-          placeholder="搜索模型名称 / 简介 / 标签"
+          :placeholder="t('home.searchPlaceholder')"
           clearable
           size="large"
           class="search-input"
@@ -795,12 +797,12 @@ function closeBatchDialog() {
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="asc" :class="{ 'is-active': sortDir === 'asc' }">正序</el-dropdown-item>
-              <el-dropdown-item command="desc" :class="{ 'is-active': sortDir === 'desc' }">降序</el-dropdown-item>
-              <el-dropdown-item divided command="uploadTime" :class="{ 'is-active': sortBy === 'uploadTime' }">上传时间</el-dropdown-item>
-              <el-dropdown-item command="fileSize" :class="{ 'is-active': sortBy === 'fileSize' }">文件大小</el-dropdown-item>
-              <el-dropdown-item command="name" :class="{ 'is-active': sortBy === 'name' }">名称</el-dropdown-item>
-              <el-dropdown-item command="dimension" :class="{ 'is-active': sortBy === 'dimension' }">尺寸</el-dropdown-item>
+              <el-dropdown-item command="asc" :class="{ 'is-active': sortDir === 'asc' }">{{ t('common.sort') }} A-Z</el-dropdown-item>
+              <el-dropdown-item command="desc" :class="{ 'is-active': sortDir === 'desc' }">{{ t('common.sort') }} Z-A</el-dropdown-item>
+              <el-dropdown-item divided command="uploadTime" :class="{ 'is-active': sortBy === 'uploadTime' }">{{ t('common.uploadTime') }}</el-dropdown-item>
+              <el-dropdown-item command="fileSize" :class="{ 'is-active': sortBy === 'fileSize' }">{{ t('common.fileSize') }}</el-dropdown-item>
+              <el-dropdown-item command="name" :class="{ 'is-active': sortBy === 'name' }">{{ t('common.name') }}</el-dropdown-item>
+              <el-dropdown-item command="dimension" :class="{ 'is-active': sortBy === 'dimension' }">{{ t('common.dimensions') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -811,8 +813,8 @@ function closeBatchDialog() {
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="single">单个上传（可编辑详情）</el-dropdown-item>
-              <el-dropdown-item command="batch">批量上传（自动生成封面）</el-dropdown-item>
+              <el-dropdown-item command="single">{{ t('home.singleUpload') }}</el-dropdown-item>
+              <el-dropdown-item command="batch">{{ t('home.batchUpload') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -822,7 +824,7 @@ function closeBatchDialog() {
     <!-- 筛选栏：标签、格式、排序、多选操作 -->
     <div class="filter-bar">
       <div class="filter-left">
-        <el-select v-model="selectedTags" multiple placeholder="标签: 全部" class="filter-select">
+        <el-select v-model="selectedTags" multiple :placeholder="t('home.tagsPlaceholder')" class="filter-select">
           <template #default>
             <el-option v-for="t in allTagsInUse" :key="t.name" :value="t.name">
               <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -835,7 +837,7 @@ function closeBatchDialog() {
             </el-option>
           </template>
         </el-select>
-        <el-select v-model="selectedTypes" multiple placeholder="格式: 全部" class="filter-select">
+        <el-select v-model="selectedTypes" multiple :placeholder="t('home.formatsPlaceholder')" class="filter-select">
           <template #default>
             <el-option v-for="t in allTypesInUse" :key="t.name" :value="t.name">
               <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -851,12 +853,12 @@ function closeBatchDialog() {
       </div>
       <div class="filter-right">
         <div class="batch-actions">
-          <span class="selected-count">{{ selectedIds.length === 0 ? '未选择' : '已选 ' + selectedIds.length }}</span>
-          <el-button text @click="selectAll">全选</el-button>
-          <el-button text @click="selectInverse">反选</el-button>
-          <el-button text @click="clearSelection" :disabled="selectedIds.length === 0">取消</el-button>
-          <el-button text @click="handleBatchAddTag" :disabled="selectedIds.length === 0"><i class="iconfont icon-tag"></i> 添加标签</el-button>
-          <el-button text type="danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><i class="iconfont icon-trash-alt"></i> 删除</el-button>
+          <span class="selected-count">{{ selectedIds.length === 0 ? t('common.unselected') : t('common.selected') + ' ' + selectedIds.length }}</span>
+          <el-button text @click="selectAll">{{ t('home.selectAll') }}</el-button>
+          <el-button text @click="selectInverse">{{ t('home.selectInverse') }}</el-button>
+          <el-button text @click="clearSelection" :disabled="selectedIds.length === 0">{{ t('common.cancel') }}</el-button>
+          <el-button text @click="handleBatchAddTag" :disabled="selectedIds.length === 0"><i class="iconfont icon-tag"></i> {{ t('home.addTag') }}</el-button>
+          <el-button text type="danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><i class="iconfont icon-trash-alt"></i> {{ t('common.delete') }}</el-button>
         </div>
       </div>
     </div>
@@ -881,7 +883,7 @@ function closeBatchDialog() {
         />
       </div>
 
-      <el-empty v-else :description="state.models.length === 0 ? '还没有模型，点击「上传模型」添加第一个' : '没有匹配的模型'" />
+      <el-empty v-else :description="state.models.length === 0 ? t('home.noModel') : t('home.noMatch')" />
 
       <!-- 框选框 -->
       <div

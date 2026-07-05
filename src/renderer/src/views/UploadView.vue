@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, shallowRef, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
 import ModelViewer from '../components/ModelViewer.vue'
 import TagInput from '../components/TagInput.vue'
 
+const { t } = useI18n()
 const { state, goHome, deleteModel } = useStore()
 
 function base64ToUint8Array(base64) {
@@ -87,14 +89,14 @@ const allFiles = computed(() => {
 
 function roleLabel(role) {
   const m = {
-    main: '主',
-    mtl: '材质',
-    texture: '贴图',
-    animation: '动画',
+    main: t('common.main'),
+    mtl: t('common.mtl'),
+    texture: t('common.texture'),
+    animation: t('common.animation'),
     bin: 'BIN',
-    aux: '辅'
+    aux: t('common.aux')
   }
-  return m[role] || '辅'
+  return m[role] || t('common.aux')
 }
 
 function roleTagType(role) {
@@ -139,11 +141,11 @@ async function addAuxFile(role) {
       buffer.value = newBuffer
     })
 
-    showToast('已添加 ' + added.length + ' 个文件')
+    showToast(t('common.add') + ' ' + added.length + ' ' + t('common.files'))
   } catch (e) {
-    errorMsg.value = e.message || '添加失败'
+    errorMsg.value = e.message || t('common.add') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('[Upload] 添加辅助文件失败:', e)
+    console.error('[Upload] ' + t('common.add') + t('common.files') + t('common.failed') + ':', e)
   }
 }
 
@@ -151,7 +153,7 @@ async function removeAuxFile(fileName) {
   if (!modelId.value) return
   try {
     await window.api.models.removeAuxFile(String(modelId.value), fileName)
-    console.log('[Upload] 删除辅助文件:', fileName)
+    console.log('[Upload] ' + t('common.delete') + t('common.files') + ':', fileName)
 
     if (isEdit.value) {
       const removed = (state.editingModel.files || []).find((f) => f.name === fileName)
@@ -177,11 +179,11 @@ async function removeAuxFile(fileName) {
       buffer.value = newBuffer
     })
 
-    showToast('已删除')
+    showToast(t('common.delete') + t('common.ok'))
   } catch (e) {
-    errorMsg.value = e.message || '删除失败'
+    errorMsg.value = e.message || t('common.delete') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('[Upload] 删除辅助文件失败:', e)
+    console.error('[Upload] ' + t('common.delete') + t('common.files') + t('common.failed') + ':', e)
   }
 }
 
@@ -195,29 +197,26 @@ async function selectFile() {
       return
     }
 
-    // 重复检测：询问用户是否覆盖
     if (data.duplicate) {
       loadingModel.value = false
-      const existingName = data.existingModel?.name || data.existingModel?.fileName || '未命名'
+      const existingName = data.existingModel?.name || data.existingModel?.fileName || t('common.empty')
       try {
         await ElMessageBox.confirm(
-          `发现重复模型「${existingName}」，是否覆盖？\n覆盖将删除旧模型及其封面、标签等信息。`,
-          '发现重复模型',
+          t('upload.confirmDuplicate', { name: existingName }),
+          t('upload.confirmDuplicate'),
           {
-            confirmButtonText: '覆盖',
-            cancelButtonText: '跳过',
+            confirmButtonText: t('upload.overwrite'),
+            cancelButtonText: t('upload.skip'),
             type: 'warning',
             distinguishCancelAndClose: true
           }
         )
       } catch (action) {
-        // 用户选择跳过或关闭
         if (action === 'cancel') {
-          showToast('已跳过重复模型')
+          showToast(t('upload.skip'))
         }
         return
       }
-      // 用户确认覆盖
       loadingModel.value = true
       try {
         const overwritten = await window.api.models.overwrite(
@@ -226,9 +225,9 @@ async function selectFile() {
         )
         applyUploadData(overwritten)
       } catch (e) {
-        errorMsg.value = e.message || '覆盖失败'
+        errorMsg.value = e.message || t('upload.overwrite') + t('common.failed')
         showToast(errorMsg.value, 'error')
-        console.error('[Upload] 覆盖失败:', e)
+        console.error('[Upload] ' + t('upload.overwrite') + t('common.failed') + ':', e)
       } finally {
         loadingModel.value = false
       }
@@ -237,9 +236,9 @@ async function selectFile() {
 
     applyUploadData(data)
   } catch (e) {
-    errorMsg.value = e.message || '上传失败'
+    errorMsg.value = e.message || t('common.upload') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('[Upload] 上传失败:', e)
+    console.error('[Upload] ' + t('common.upload') + t('common.failed') + ':', e)
   } finally {
     loadingModel.value = false
   }
@@ -281,13 +280,13 @@ async function saveCover() {
   if (!viewerRef.value || !modelId.value) return
   const base64 = viewerRef.value.captureThumbnail()
   if (!base64) {
-    console.warn('封面截图为空')
+    console.warn(t('upload.coverImage') + t('common.empty'))
     return
   }
   coverPreview.value = base64
   await window.api.models.saveImage(String(modelId.value), 'cover', base64)
   coverSaved.value = true
-  showToast('封面已更新')
+  showToast(t('upload.coverImage') + t('common.update'))
 }
 
 function resetView() {
@@ -296,8 +295,8 @@ function resetView() {
 
 async function handleSave() {
   if (!name.value.trim()) {
-    errorMsg.value = '请填写模型名称'
-    ElMessage.warning('请填写模型名称')
+    errorMsg.value = t('upload.modelName')
+    ElMessage.warning(t('upload.modelName'))
     return
   }
   saving.value = true
@@ -342,12 +341,12 @@ async function handleSave() {
       await window.api.models.save(saveData)
     }
     saved.value = true
-    showToast('保存成功')
+    showToast(t('common.save') + t('common.ok'))
     setTimeout(() => goHome(), 600)
   } catch (e) {
-    errorMsg.value = e.message || '保存失败'
+    errorMsg.value = e.message || t('common.save') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('保存失败:', e)
+    console.error(t('common.save') + t('common.failed') + ':', e)
   } finally {
     saving.value = false
   }
@@ -366,11 +365,11 @@ async function handleBack() {
 async function handleDelete() {
   try {
     await ElMessageBox.confirm(
-      '删除后无法恢复，确定删除该模型吗？',
-      '确认删除',
+      t('upload.deleteConfirm'),
+      t('upload.deleteConfirm'),
       {
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('upload.delete'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -380,12 +379,12 @@ async function handleDelete() {
   }
   try {
     await deleteModel(String(modelId.value))
-    showToast('已删除')
+    showToast(t('common.delete') + t('common.ok'))
     setTimeout(() => goHome(), 400)
   } catch (e) {
-    errorMsg.value = e.message || '删除失败'
+    errorMsg.value = e.message || t('common.delete') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('[Upload] 删除失败:', e)
+    console.error('[Upload] ' + t('common.delete') + t('common.failed') + ':', e)
   }
 }
 
@@ -404,12 +403,12 @@ async function handleExport() {
       exporting.value = false
       return
     }
-    showToast(`已导出 ${res.fileCount} 个文件到：${res.targetDir}`)
-    console.log('[Upload] 导出完成:', res)
+    showToast(t('upload.exportCount', { count: res.fileCount, dir: res.targetDir }))
+    console.log('[Upload] ' + t('common.export') + t('common.ok') + ':', res)
   } catch (e) {
-    errorMsg.value = e.message || '导出失败'
+    errorMsg.value = e.message || t('common.export') + t('common.failed')
     showToast(errorMsg.value, 'error')
-    console.error('[Upload] 导出失败:', e)
+    console.error('[Upload] ' + t('common.export') + t('common.failed') + ':', e)
   } finally {
     exporting.value = false
   }
@@ -443,9 +442,9 @@ onMounted(async () => {
         coverPreview.value = img || ''
       }
     } catch (e) {
-      errorMsg.value = e.message || '加载模型失败'
+      errorMsg.value = e.message || t('upload.loadModel') + t('common.failed')
       showToast(errorMsg.value, 'error')
-      console.error('[Upload] 编辑模式加载失败:', e)
+      console.error('[Upload] ' + t('upload.loadModel') + t('common.failed') + ':', e)
     } finally {
       loadingModel.value = false
     }
@@ -456,17 +455,17 @@ onMounted(async () => {
 <template>
   <div class="upload">
     <header class="topbar">
-      <el-button text @click="handleBack"><i class="iconfont icon-chevron-left"></i> 返回</el-button>
-      <span class="title">{{ isEdit ? '编辑模型' : '上传模型' }}</span>
+      <el-button text @click="handleBack"><i class="iconfont icon-chevron-left"></i> {{ t('common.back') }}</el-button>
+      <span class="title">{{ isEdit ? t('upload.editModel') : t('upload.uploadModel') }}</span>
       <div class="topbar-actions">
         <el-button
           :disabled="!buffer || exporting"
           :loading="exporting"
           @click="handleExport"
-          title="导出模型到指定位置"
+          :title="t('upload.exportTitle')"
         >
           <i class="iconfont icon-cloud-download"></i>
-          {{ exporting ? '导出中...' : '导出模型' }}
+          {{ exporting ? t('common.exporting') : t('common.export') }}
         </el-button>
         <el-button
           v-if="isEdit"
@@ -475,10 +474,10 @@ onMounted(async () => {
           @click="handleDelete"
         >
           <i class="iconfont icon-trash-alt"></i>
-          删除模型
+          {{ t('common.delete') }}
         </el-button>
         <el-button type="primary" :loading="saving" :disabled="!buffer" @click="handleSave">
-          {{ saving ? '保存中...' : '保存' }}
+          {{ saving ? t('common.saving') : t('common.save') }}
         </el-button>
       </div>
     </header>
@@ -497,84 +496,84 @@ onMounted(async () => {
           />
           <div v-else-if="loadingModel" class="viewer-loading">
             <i class="iconfont icon-sync is-loading loading-icon"></i>
-            <p>加载模型中...</p>
+            <p>{{ t('common.loading') }}...</p>
           </div>
           <div v-else class="viewer-empty" @click="selectFile">
-            <el-empty description="点击选择 3D 模型文件">
-              <p class="formats">支持 GLB / GLTF / OBJ / STL / JSON / FBX</p>
+            <el-empty :description="t('upload.selectModel')">
+              <p class="formats">{{ t('upload.formats') }}</p>
             </el-empty>
           </div>
         </div>
         <div class="viewer-tools" v-if="buffer">
-          <el-button @click="saveCover"><i class="iconfont icon-image"></i> 保存封面</el-button>
-          <el-button text @click="resetView"><i class="iconfont icon-scale"></i> 重置视角</el-button>
+          <el-button @click="saveCover"><i class="iconfont icon-image"></i> {{ t('upload.saveCover') }}</el-button>
+          <el-button text @click="resetView"><i class="iconfont icon-scale"></i> {{ t('upload.resetView') }}</el-button>
           <div class="status">
-            <span :class="['dot', coverSaved ? 'on' : '']"></span> 封面已保存
+            <span :class="['dot', coverSaved ? 'on' : '']"></span> {{ t('upload.coverSaved') }}
           </div>
         </div>
-        <p class="tip">拖拽旋转 · 滚轮缩放 · 右键平移，调整到满意视角后点击「保存封面」</p>
+        <p class="tip">{{ t('upload.tip') }}</p>
       </div>
 
       <div class="form-panel">
         <div v-if="loadingModel" class="form-loading">
           <i class="iconfont icon-cloud-upload is-loading loading-icon-sm"></i>
-          <p>加载模型中...</p>
+          <p>{{ t('common.loading') }}...</p>
         </div>
         <div v-else-if="!isEdit && !buffer" class="form-empty">
           <el-button type="primary" size="large" :loading="loadingModel" @click="selectFile">
-            {{ loadingModel ? '处理中...' : '选择模型文件' }}
+            {{ loadingModel ? t('common.processing') : t('upload.selectModel') }}
           </el-button>
         </div>
 
         <template v-else>
           <el-form label-position="top" class="upload-form">
-            <el-form-item label="模型名称" required>
-              <el-input v-model="name" placeholder="请输入模型名称" />
+            <el-form-item :label="t('upload.modelName')" required>
+              <el-input v-model="name" :placeholder="t('upload.modelName')" />
             </el-form-item>
 
-            <el-form-item label="简介">
+            <el-form-item :label="t('upload.description')">
               <el-input
                 v-model="description"
                 type="textarea"
                 :rows="3"
-                placeholder="描述模型用途、特点等"
+                :placeholder="t('upload.descriptionPlaceholder')"
               />
             </el-form-item>
 
-            <el-form-item label="标签">
+            <el-form-item :label="t('common.tags')">
               <TagInput v-model="tags" :pool="state.tags" />
             </el-form-item>
 
-            <el-form-item label="封面预览">
+            <el-form-item :label="t('upload.coverPreview')">
               <div class="cover-preview">
-                <img v-if="coverPreview" :src="coverPreview" alt="封面" />
+                <img v-if="coverPreview" :src="coverPreview" :alt="t('upload.coverImage')" />
                 <div v-else class="cover-placeholder">
-                  <span>{{ coverSaved ? '加载中...' : '调整视角后点击「保存封面」' }}</span>
+                  <span>{{ coverSaved ? t('common.loading') + '...' : t('upload.coverPlaceholder') }}</span>
                 </div>
               </div>
             </el-form-item>
 
             <el-form-item v-if="fileInfo" class="info-section">
-              <template #label>文件信息</template>
+              <template #label>{{ t('upload.fileInfo') }}</template>
               <div class="info-grid">
                 <div class="info-item">
-                  <span class="info-label"><i class="iconfont icon-file"></i> 文件名</span>
+                  <span class="info-label"><i class="iconfont icon-file"></i> {{ t('upload.fileName') }}</span>
                   <span class="info-value">{{ fileInfo.fileName }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label"><i class="iconfont icon-tag"></i> 格式</span>
+                  <span class="info-label"><i class="iconfont icon-tag"></i> {{ t('upload.format') }}</span>
                   <span class="info-value">{{ (fileInfo.fileType || '').toUpperCase() }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label"><i class="iconfont icon-cloud-download"></i> 文件大小</span>
+                  <span class="info-label"><i class="iconfont icon-cloud-download"></i> {{ t('upload.fileSize') }}</span>
                   <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label"><i class="iconfont icon-box"></i> 尺寸</span>
+                  <span class="info-label"><i class="iconfont icon-box"></i> {{ t('upload.dimensions') }}</span>
                   <span class="info-value">{{ dimensions.x }} × {{ dimensions.y }} × {{ dimensions.z }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label"><i class="iconfont icon-clock"></i> 上传时间</span>
+                  <span class="info-label"><i class="iconfont icon-clock"></i> {{ t('upload.uploadTime') }}</span>
                   <span class="info-value">{{ fileInfo.uploadTime?.slice(0, 19).replace('T', ' ') }}</span>
                 </div>
               </div>
@@ -582,12 +581,12 @@ onMounted(async () => {
 
             <el-form-item v-if="fileInfo" class="files-section">
               <template #label>
-                <span class="label-text">关联文件 ({{ allFiles.length }})</span>
+                <span class="label-text">{{ t('upload.relatedFiles') }} ({{ allFiles.length }})</span>
               </template>
               <div class="aux-buttons">
-                <el-button v-if="canAddMTL" size="small" @click="addAuxFile('mtl')">+ MTL 材质</el-button>
-                <el-button v-if="canAddTexture" size="small" @click="addAuxFile('texture')">+ 贴图</el-button>
-                <el-button v-if="canAddAnimation" size="small" @click="addAuxFile('animation')">+ 动画</el-button>
+                <el-button v-if="canAddMTL" size="small" @click="addAuxFile('mtl')">+ MTL {{ t('common.mtl') }}</el-button>
+                <el-button v-if="canAddTexture" size="small" @click="addAuxFile('texture')">+ {{ t('common.texture') }}</el-button>
+                <el-button v-if="canAddAnimation" size="small" @click="addAuxFile('animation')">+ {{ t('common.animation') }}</el-button>
                 <el-button v-if="canAddBin" size="small" @click="addAuxFile('bin')">+ .bin</el-button>
               </div>
               <ul class="file-list">
@@ -603,7 +602,7 @@ onMounted(async () => {
                     size="small"
                     text
                     @click="removeAuxFile(f.name)"
-                    title="删除"
+                    :title="t('common.delete')"
                   >
                     <i class="iconfont icon-close"></i>
                   </el-button>
@@ -624,11 +623,10 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- 保存中全屏蒙版 -->
     <div v-if="saving" class="saving-mask">
       <div class="saving-content">
         <i class="iconfont icon-movie saving-spinner"></i>
-        <p class="saving-text">保存中...</p>
+        <p class="saving-text">{{ t('common.saving') }}...</p>
       </div>
     </div>
   </div>

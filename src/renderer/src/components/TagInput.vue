@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
@@ -62,7 +65,7 @@ function handleBlur() {
     </div>
     <el-input
       v-model="input"
-      placeholder="输入标签后回车添加"
+      :placeholder="t('upload.addTag')"
       @keydown="onKeydown"
       @focus="showSuggest = true"
       @blur="handleBlur"
@@ -95,11 +98,16 @@ function handleBlur() {
   margin-top: 4px;
   max-height: 200px;
   overflow-y: auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 .suggest li {
   padding: 6px 12px;
   font-size: 13px;
   cursor: pointer;
+  color: var(--text-1);
 }
 .suggest li:hover {
   background: var(--bg-hover);
