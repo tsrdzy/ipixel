@@ -54,7 +54,7 @@ function handleDblClick(e) {
 <template>
   <el-card class="card" :class="{ selected }" shadow="hover" @click="handleClick" @dblclick="handleDblClick">
     <div class="cover">
-      <img v-if="model.coverBase64" :src="model.coverBase64" alt="cover" />
+      <img v-if="model.coverBase64" :src="model.coverBase64" alt="cover" draggable="false" @mousedown.prevent />
       <div v-else class="cover-placeholder">
         <span>无预览图</span>
       </div>

@@ -20,10 +20,12 @@ const anchorId = ref(null) // shift连续选择的基准ID
 
 // 框选相关
 const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
-const dragEnd = ref({ x: 0, y: 0 })
+const dragStartGlobal = ref({ x: 0, y: 0 })
+const dragEndGlobal = ref({ x: 0, y: 0 })
 const contentRef = ref(null)
 const showSelectionBox = ref(false)
+let lastMouseX = 0
+let lastMouseY = 0
 
 /** 添加标签到全局标签池 */
 async function handleAddTag() {
@@ -351,7 +353,8 @@ async function handleBatchAddTag() {
         if (!model.tags.includes(tag)) {
           model.tags.push(tag)
           try {
-            await window.api.models.update(String(id), model)
+            const patch = { tags: [...model.tags] }
+            await window.api.models.update(String(id), patch)
           } catch (e) {
             console.error('批量添加标签失败:', id, e)
           }
@@ -377,24 +380,50 @@ function handleContentClick(e) {
   }
 }
 
+function updateDragEnd() {
+  if (!isDragging.value || !contentRef.value) return
+  const rect = contentRef.value.getBoundingClientRect()
+  const viewportX = lastMouseX - rect.left
+  const viewportY = lastMouseY - rect.top
+  dragEndGlobal.value = {
+    x: viewportX + contentRef.value.scrollLeft,
+    y: viewportY + contentRef.value.scrollTop
+  }
+}
+
 function handleMouseDown(e) {
   if (!contentRef.value) return
   if (e.ctrlKey || e.metaKey || e.shiftKey) {
     return
   }
   isDragging.value = true
+  lastMouseX = e.clientX
+  lastMouseY = e.clientY
   const rect = contentRef.value.getBoundingClientRect()
-  dragStart.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  dragEnd.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  const viewportX = e.clientX - rect.left
+  const viewportY = e.clientY - rect.top
+  dragStartGlobal.value = {
+    x: viewportX + contentRef.value.scrollLeft,
+    y: viewportY + contentRef.value.scrollTop
+  }
+  dragEndGlobal.value = { ...dragStartGlobal.value }
   showSelectionBox.value = true
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
+  contentRef.value.addEventListener('scroll', updateDragEnd)
 }
 
 function handleMouseMove(e) {
   if (!isDragging.value || !contentRef.value) return
+  lastMouseX = e.clientX
+  lastMouseY = e.clientY
   const rect = contentRef.value.getBoundingClientRect()
-  dragEnd.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  const viewportX = e.clientX - rect.left
+  const viewportY = e.clientY - rect.top
+  dragEndGlobal.value = {
+    x: viewportX + contentRef.value.scrollLeft,
+    y: viewportY + contentRef.value.scrollTop
+  }
 }
 
 function handleMouseUp(e) {
@@ -404,21 +433,20 @@ function handleMouseUp(e) {
   showSelectionBox.value = false
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
+  contentRef.value.removeEventListener('scroll', updateDragEnd)
   
-  const rect = contentRef.value.getBoundingClientRect()
-  const startX = Math.min(dragStart.value.x, dragEnd.value.x)
-  const startY = Math.min(dragStart.value.y, dragEnd.value.y)
-  const endX = Math.max(dragStart.value.x, dragEnd.value.x)
-  const endY = Math.max(dragStart.value.y, dragEnd.value.y)
+  const startX = Math.min(dragStartGlobal.value.x, dragEndGlobal.value.x)
+  const startY = Math.min(dragStartGlobal.value.y, dragEndGlobal.value.y)
+  const endX = Math.max(dragStartGlobal.value.x, dragEndGlobal.value.x)
+  const endY = Math.max(dragStartGlobal.value.y, dragEndGlobal.value.y)
   
   const cards = contentRef.value.querySelectorAll('.card')
   const newSelected = []
   cards.forEach((card) => {
-    const cardRect = card.getBoundingClientRect()
-    const cardLeft = cardRect.left - rect.left
-    const cardTop = cardRect.top - rect.top
-    const cardRight = cardLeft + cardRect.width
-    const cardBottom = cardTop + cardRect.height
+    const cardLeft = card.offsetLeft
+    const cardTop = card.offsetTop
+    const cardRight = cardLeft + card.offsetWidth
+    const cardBottom = cardTop + card.offsetHeight
     if (cardLeft < endX && cardRight > startX && cardTop < endY && cardBottom > startY) {
       const modelId = card.getAttribute('data-model-id')
       if (modelId) {
@@ -833,10 +861,10 @@ function closeBatchDialog() {
         v-if="showSelectionBox"
         class="selection-box"
         :style="{
-          left: Math.min(dragStart.x, dragEnd.x) + 'px',
-          top: Math.min(dragStart.y, dragEnd.y) + 'px',
-          width: Math.abs(dragEnd.x - dragStart.x) + 'px',
-          height: Math.abs(dragEnd.y - dragStart.y) + 'px'
+          left: Math.min(dragStartGlobal.x, dragEndGlobal.x) + 'px',
+          top: Math.min(dragStartGlobal.y, dragEndGlobal.y) + 'px',
+          width: Math.abs(dragEndGlobal.x - dragStartGlobal.x) + 'px',
+          height: Math.abs(dragEndGlobal.y - dragStartGlobal.y) + 'px'
         }"
       />
     </main>
