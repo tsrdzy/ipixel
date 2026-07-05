@@ -1,34 +1,67 @@
-# imodel
+# iModel - 本地3D模型资源管理工具
 
-An Electron application with Vue
+一款基于 Electron + Vue 3 开发的桌面应用，帮助设计师和开发者高效管理本地3D模型资源。
 
-## Recommended IDE Setup
+## ✨ 功能特性
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+### 📦 资源库管理
+- 创建新资源库（选择空文件夹）
+- 打开已有资源库
+- 资源库列表记录与快速切换
+- 资源库重命名
 
-## Project Setup
+### 📤 模型上传
+- **单个上传**：支持编辑模型详情（名称、简介、标签）
+- **批量上传**：自动生成封面，适合批量导入
+- 重复模型检测与覆盖确认
+- 支持拖拽旋转视角调整
 
-### Install
+### 🎨 模型管理
+- 3D模型实时预览（Three.js）
+- 模型动画播放与控制
+- 自定义封面生成
+- 辅助文件管理（材质 .mtl、贴图 .png、动画、.bin）
+- 模型信息查看（文件名、格式、大小、尺寸、上传时间）
 
-```bash
-$ npm install
-```
+### 🔍 搜索与筛选
+- 关键词搜索（名称、简介、标签）
+- 标签筛选（多选，OR关系）
+- 格式筛选（GLB、GLTF、OBJ、STL、JSON、FBX等）
+- 多种排序方式（上传时间、文件大小、名称、模型尺寸）
 
-### Development
+### 🎭 用户体验
+- 深色/浅色主题切换（自动记忆）
+- 自定义窗口标题栏（拖拽、最小化、最大化、关闭）
+- 模型卡片网格展示
+- 响应式设计
 
-```bash
-$ npm run dev
-```
+### 💾 数据安全
+- 所有数据本地存储，隐私安全
+- 模型元数据分片存储，提升性能
+- 模型ID使用SHA256哈希确保唯一性
 
-### Build
+## 🖥️ 支持的模型格式
 
-```bash
-# For windows
-$ npm run build:win
+| 格式 | 描述 | 支持辅助文件 |
+|------|------|-------------|
+| GLB | glTF Binary | ✅ .bin, 贴图 |
+| GLTF | glTF JSON | ✅ .bin, 贴图 |
+| OBJ | Wavefront Object | ✅ .mtl, 贴图 |
+| STL | Stereolithography | ❌ |
+| JSON | Three.js JSON | ✅ 动画、贴图 |
+| FBX | Autodesk FBX | ✅ 贴图 |
 
-# For macOS
-$ npm run build:mac
+## 🚀 快速开始
 
-# For Linux
-$ npm run build:linux
-```
+### 系统要求
+
+- Windows 10+ / macOS 10.15+ / Linux
+- Node.js 18+
+
+### 使用指南
+
+1. **首次启动**：选择"创建新资源库"创建空库，或"打开资源库"选择已有库
+2. **上传模型**：点击"上传模型"按钮，支持单个上传（可编辑详情）或批量上传
+3. **预览模型**：点击模型卡片进入详情页，可拖拽旋转、滚轮缩放、右键平移
+4. **编辑信息**：在详情页修改名称、简介、标签，添加辅助文件
+5. **搜索筛选**：使用顶部搜索框和标签/格式筛选器快速定位模型

@@ -6,13 +6,24 @@ import { useStore } from '../composables/useStore'
 import ModelCard from '../components/ModelCard.vue'
 import ModelViewer from '../components/ModelViewer.vue'
 
-const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll } = useStore()
+const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll, deleteModel } = useStore()
 
 const keyword = ref('')
 const sortBy = ref('uploadTime') // uploadTime | fileSize | name | dimension
 const sortDir = ref('desc') // asc | desc
 const selectedTags = ref([])
 const selectedTypes = ref([]) // 选中的格式筛选
+
+const selectedIds = ref([]) // 选中的模型ID列表
+const isMultiSelect = ref(false) // 是否处于多选模式
+const anchorId = ref(null) // shift连续选择的基准ID
+
+// 框选相关
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+const dragEnd = ref({ x: 0, y: 0 })
+const contentRef = ref(null)
+const showSelectionBox = ref(false)
 
 /** 添加标签到全局标签池 */
 async function handleAddTag() {
@@ -149,7 +160,284 @@ function handleSortCommand(cmd) {
 }
 
 function handleUploadCommand(cmd) {
-  if (cmd === 'batch') handleBatchUpload()
+  if (cmd === 'batch') {
+    handleBatchUpload()
+  } else if (cmd === 'single') {
+    goUpload()
+  }
+}
+
+function isSelected(id) {
+  const idStr = String(id)
+  return selectedIds.value.some((sid) => String(sid) === idStr)
+}
+
+function toggleSelect(model) {
+  const modelId = String(model.id)
+  const idx = selectedIds.value.findIndex((sid) => String(sid) === modelId)
+  if (idx === -1) {
+    selectedIds.value.push(model.id)
+  } else {
+    selectedIds.value.splice(idx, 1)
+  }
+  isMultiSelect.value = selectedIds.value.length > 0
+}
+
+function handleSelect(model, e) {
+  console.log('[HomeView] handleSelect triggered')
+  
+  const event = e || window.event
+  console.log('[HomeView] event:', {
+    ctrlKey: event?.ctrlKey,
+    metaKey: event?.metaKey,
+    shiftKey: event?.shiftKey,
+    type: event?.type
+  })
+  
+  if (!event) {
+    console.log('[HomeView] No event object, fallback to single select')
+    selectedIds.value = [model.id]
+    isMultiSelect.value = true
+    anchorId.value = String(model.id)
+    return
+  }
+  
+  const modelId = String(model.id)
+  console.log('[HomeView] modelId:', modelId)
+  console.log('[HomeView] current selectedIds:', selectedIds.value)
+  console.log('[HomeView] anchorId:', anchorId.value)
+  console.log('[HomeView] isMultiSelect:', isMultiSelect.value)
+  
+  if (event.ctrlKey || event.metaKey) {
+    console.log('[HomeView] Ctrl/Cmd + Click detected')
+    toggleSelect(model)
+    if (!anchorId.value) {
+      anchorId.value = modelId
+    }
+  } else if (event.shiftKey) {
+    console.log('[HomeView] Shift + Click detected')
+    const models = filteredModels.value
+    console.log('[HomeView] filteredModels count:', models.length)
+    
+    const currentIdx = models.findIndex((m) => String(m.id) === modelId)
+    console.log('[HomeView] currentIdx:', currentIdx)
+    
+    if (currentIdx === -1) {
+      console.log('[HomeView] currentIdx is -1, returning')
+      return
+    }
+    
+    if (!anchorId.value || selectedIds.value.length === 0) {
+      console.log('[HomeView] No anchorId or no selectedIds, setting anchor')
+      anchorId.value = modelId
+      selectedIds.value = [model.id]
+      isMultiSelect.value = true
+    } else {
+      const anchorIdx = models.findIndex((m) => String(m.id) === anchorId.value)
+      console.log('[HomeView] anchorIdx:', anchorIdx)
+      
+      if (anchorIdx === -1) {
+        console.log('[HomeView] anchorIdx is -1, resetting')
+        anchorId.value = modelId
+        selectedIds.value = [model.id]
+        isMultiSelect.value = true
+        return
+      }
+      
+      const start = Math.min(currentIdx, anchorIdx)
+      const end = Math.max(currentIdx, anchorIdx)
+      console.log('[HomeView] range:', { start, end })
+      
+      const newSelected = []
+      for (let i = start; i <= end; i++) {
+        newSelected.push(models[i].id)
+      }
+      console.log('[HomeView] newSelected:', newSelected)
+      selectedIds.value = newSelected
+      isMultiSelect.value = true
+    }
+  } else {
+    console.log('[HomeView] Normal click detected - single select')
+    selectedIds.value = [model.id]
+    isMultiSelect.value = true
+    anchorId.value = modelId
+  }
+}
+
+function handleDblClick(model) {
+  if (selectedIds.value.length === 0 || selectedIds.value.length === 1 && selectedIds.value[0] === model.id) {
+    goEdit(model)
+  }
+}
+
+function clearSelection() {
+  selectedIds.value = []
+  isMultiSelect.value = false
+  anchorId.value = null
+}
+
+function selectAll() {
+  const models = filteredModels.value
+  selectedIds.value = models.map((m) => m.id)
+  isMultiSelect.value = selectedIds.value.length > 0
+  if (selectedIds.value.length > 0) {
+    anchorId.value = String(models[0].id)
+  }
+}
+
+function selectInverse() {
+  const models = filteredModels.value
+  const allIds = new Set(models.map((m) => String(m.id)))
+  const selectedSet = new Set(selectedIds.value.map((id) => String(id)))
+  const inverseIds = []
+  allIds.forEach((id) => {
+    if (!selectedSet.has(id)) {
+      const model = models.find((m) => String(m.id) === id)
+      if (model) inverseIds.push(model.id)
+    }
+  })
+  selectedIds.value = inverseIds
+  isMultiSelect.value = selectedIds.value.length > 0
+  if (selectedIds.value.length > 0) {
+    anchorId.value = String(selectedIds.value[0])
+  } else {
+    anchorId.value = null
+  }
+}
+
+async function handleBatchDelete() {
+  if (selectedIds.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedIds.value.length} 个模型吗？删除后无法恢复。`,
+      '批量删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+  } catch {
+    return
+  }
+  let successCount = 0
+  for (const id of selectedIds.value) {
+    try {
+      await deleteModel(String(id))
+      successCount++
+    } catch (e) {
+      console.error('批量删除失败:', id, e)
+    }
+  }
+  await loadAll()
+  clearSelection()
+  ElMessage.success(`已删除 ${successCount} 个模型`)
+}
+
+async function handleBatchAddTag() {
+  if (selectedIds.value.length === 0) return
+  try {
+    const { value } = await ElMessageBox.prompt('请输入要添加的标签名称', '批量添加标签', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputValidator: (v) => (v && v.trim() ? true : '标签名不能为空')
+    })
+    const tag = value.trim()
+    for (const id of selectedIds.value) {
+      const model = state.models.find((m) => m.id === id)
+      if (model) {
+        if (!model.tags) model.tags = []
+        if (!model.tags.includes(tag)) {
+          model.tags.push(tag)
+          try {
+            await window.api.models.update(String(id), model)
+          } catch (e) {
+            console.error('批量添加标签失败:', id, e)
+          }
+        }
+      }
+    }
+    await loadAll()
+    ElMessage.success(`已为 ${selectedIds.value.length} 个模型添加标签 "${tag}"`)
+  } catch (e) {
+    // 用户取消
+  }
+}
+
+let justBoxSelected = false
+
+function handleContentClick(e) {
+  if (justBoxSelected) {
+    justBoxSelected = false
+    return
+  }
+  if (e.target === contentRef.value || e.target.closest('.content') === contentRef.value && !e.target.closest('.card')) {
+    clearSelection()
+  }
+}
+
+function handleMouseDown(e) {
+  if (!contentRef.value) return
+  if (e.ctrlKey || e.metaKey || e.shiftKey) {
+    return
+  }
+  isDragging.value = true
+  const rect = contentRef.value.getBoundingClientRect()
+  dragStart.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  dragEnd.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  showSelectionBox.value = true
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+}
+
+function handleMouseMove(e) {
+  if (!isDragging.value || !contentRef.value) return
+  const rect = contentRef.value.getBoundingClientRect()
+  dragEnd.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+
+function handleMouseUp(e) {
+  if (!isDragging.value || !contentRef.value) return
+  e.stopPropagation()
+  isDragging.value = false
+  showSelectionBox.value = false
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', handleMouseUp)
+  
+  const rect = contentRef.value.getBoundingClientRect()
+  const startX = Math.min(dragStart.value.x, dragEnd.value.x)
+  const startY = Math.min(dragStart.value.y, dragEnd.value.y)
+  const endX = Math.max(dragStart.value.x, dragEnd.value.x)
+  const endY = Math.max(dragStart.value.y, dragEnd.value.y)
+  
+  const cards = contentRef.value.querySelectorAll('.card')
+  const newSelected = []
+  cards.forEach((card) => {
+    const cardRect = card.getBoundingClientRect()
+    const cardLeft = cardRect.left - rect.left
+    const cardTop = cardRect.top - rect.top
+    const cardRight = cardLeft + cardRect.width
+    const cardBottom = cardTop + cardRect.height
+    if (cardLeft < endX && cardRight > startX && cardTop < endY && cardBottom > startY) {
+      const modelId = card.getAttribute('data-model-id')
+      if (modelId) {
+        newSelected.push(modelId)
+      }
+    }
+  })
+  if (newSelected.length > 0) {
+    justBoxSelected = true
+    if (e.ctrlKey || e.metaKey) {
+      selectedIds.value = [...new Set([...selectedIds.value, ...newSelected])]
+    } else {
+      selectedIds.value = newSelected
+    }
+    isMultiSelect.value = true
+  } else if (!(e.ctrlKey || e.metaKey)) {
+    justBoxSelected = true
+    clearSelection()
+  }
 }
 
 // ===== 批量上传 =====
@@ -437,7 +725,7 @@ function closeBatchDialog() {
 
 <template>
   <div class="home">
-    <!-- 顶栏 -->
+    <!-- 顶栏：标题、搜索、排序、上传 -->
     <header class="topbar">
       <div class="topbar-left">
         <el-dropdown trigger="click" @command="handleLibCommand">
@@ -452,21 +740,23 @@ function closeBatchDialog() {
           </template>
         </el-dropdown>
       </div>
-      <div class="topbar-right">
+      <div class="topbar-center">
         <el-input
           v-model="keyword"
           placeholder="搜索模型名称 / 简介 / 标签"
           clearable
+          size="large"
           class="search-input"
         >
           <template #prefix>
             <i class="iconfont icon-search"></i>
           </template>
         </el-input>
+      </div>
+      <div class="topbar-right">
         <el-dropdown trigger="click" popper-class="sort-popper" @command="handleSortCommand">
-          <el-button>
+          <el-button type="primary">
             <i class="iconfont icon-sort"></i>
-            {{ sortLabel }}<i class="iconfont icon-chevron-down el-icon--right"></i>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
@@ -475,18 +765,18 @@ function closeBatchDialog() {
               <el-dropdown-item divided command="uploadTime" :class="{ 'is-active': sortBy === 'uploadTime' }">上传时间</el-dropdown-item>
               <el-dropdown-item command="fileSize" :class="{ 'is-active': sortBy === 'fileSize' }">文件大小</el-dropdown-item>
               <el-dropdown-item command="name" :class="{ 'is-active': sortBy === 'name' }">名称</el-dropdown-item>
-              <el-dropdown-item command="dimension" :class="{ 'is-active': sortBy === 'dimension' }">模型尺寸</el-dropdown-item>
+              <el-dropdown-item command="dimension" :class="{ 'is-active': sortBy === 'dimension' }">尺寸</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <!-- 上传模型按钮：点击直接单个上传，hover显示批量上传选项 -->
+
         <el-dropdown trigger="hover" @command="handleUploadCommand">
           <el-button type="primary" @click="goUpload()">
             <i class="iconfont icon-cloud-upload"></i>
-            上传模型<i class="iconfont icon-chevron-down el-icon--right"></i>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
+              <el-dropdown-item command="single">单个上传（可编辑详情）</el-dropdown-item>
               <el-dropdown-item command="batch">批量上传（自动生成封面）</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -494,52 +784,61 @@ function closeBatchDialog() {
       </div>
     </header>
 
-    <!-- 标签筛选 -->
-    <div class="tag-bar">
-      <span class="tag-label">标签：</span>
-      <el-check-tag
-        v-for="t in allTagsInUse"
-        :key="t"
-        :checked="selectedTags.includes(t)"
-        @change="toggleTag(t)"
-      >
-        {{ t }}
-      </el-check-tag>
-      <!-- <el-button size="small" plain @click="handleAddTag">+ 添加标签</el-button> -->
-      <el-button 
-      dashed
-      type="info"
-      size="small"
-      @click="handleAddTag">添加</el-button>
-      <el-button v-if="selectedTags.length" link size="small" @click="selectedTags = []">清除</el-button>
+    <!-- 筛选栏：标签、格式、排序、多选操作 -->
+    <div class="filter-bar">
+      <div class="filter-left">
+        <el-select v-model="selectedTags" multiple placeholder="标签: 全部" class="filter-select">
+          <el-option v-for="t in allTagsInUse" :key="t" :label="t" :value="t" />
+        </el-select>
+        <el-select v-model="selectedTypes" multiple placeholder="格式: 全部" class="filter-select">
+          <el-option v-for="t in allTypesInUse" :key="t" :label="t.toUpperCase()" :value="t" />
+        </el-select>
+      </div>
+      <div class="filter-right">
+        <div class="batch-actions">
+          <span class="selected-count">{{ selectedIds.length === 0 ? '未选择' : '已选 ' + selectedIds.length }}</span>
+          <el-button text @click="selectAll">全选</el-button>
+          <el-button text @click="selectInverse">反选</el-button>
+          <el-button text @click="clearSelection" :disabled="selectedIds.length === 0">取消</el-button>
+          <el-button text @click="handleBatchAddTag" :disabled="selectedIds.length === 0"><i class="iconfont icon-tag"></i> 添加标签</el-button>
+          <el-button text type="danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><i class="iconfont icon-trash-alt"></i> 删除</el-button>
+        </div>
+      </div>
     </div>
 
-    <!-- 格式筛选 -->
-    <div class="tag-bar" v-if="allTypesInUse.length">
-      <span class="tag-label">格式筛选：</span>
-      <el-check-tag
-        v-for="t in allTypesInUse"
-        :key="t"
-        :checked="selectedTypes.includes(t)"
-        @change="toggleType(t)"
-      >
-        {{ t.toUpperCase() }}
-      </el-check-tag>
-      <el-button v-if="selectedTypes.length" link size="small" @click="selectedTypes = []">清除</el-button>
-    </div>
+
 
     <!-- 模型网格 -->
-    <main class="content">
+    <main class="content"
+          ref="contentRef"
+          @click="handleContentClick"
+          @mousedown="handleMouseDown">
       <div v-if="filteredModels.length" class="grid">
         <ModelCard
           v-for="m in filteredModels"
           :key="m.id"
           :model="m"
-          @click="goEdit(m)"
+          :selected="isSelected(m.id)"
+          :is-dragging="isDragging"
+          :data-model-id="m.id"
+          @select="handleSelect"
+          @dblclick="handleDblClick"
         />
       </div>
 
       <el-empty v-else :description="state.models.length === 0 ? '还没有模型，点击「上传模型」添加第一个' : '没有匹配的模型'" />
+
+      <!-- 框选框 -->
+      <div
+        v-if="showSelectionBox"
+        class="selection-box"
+        :style="{
+          left: Math.min(dragStart.x, dragEnd.x) + 'px',
+          top: Math.min(dragStart.y, dragEnd.y) + 'px',
+          width: Math.abs(dragEnd.x - dragStart.x) + 'px',
+          height: Math.abs(dragEnd.y - dragStart.y) + 'px'
+        }"
+      />
     </main>
 
     <!-- 批量上传进度弹窗 -->
@@ -634,6 +933,12 @@ function closeBatchDialog() {
   align-items: center;
   gap: 8px;
 }
+.topbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
 .lib-name {
   display: inline-flex;
   align-items: center;
@@ -654,29 +959,56 @@ function closeBatchDialog() {
   gap: 8px;
 }
 .search-input {
-  width: 260px;
+  width: 400px;
 }
 .search-input :deep(.el-input__prefix .iconfont) {
   font-size: 14px;
 }
-.tag-bar {
+.filter-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px 24px;
+  justify-content: space-between;
+  padding: 8px 24px;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
+  min-height: 40px;
 }
-.tag-label {
-  font-size: 12px;
-  color: var(--text-3);
-  margin-right: 4px;
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-select {
+  width: 160px;
+}
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
+  border: 1px solid var(--el-color-primary-light-7);
+}
+.selected-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  padding: 2px 8px;
+  background: var(--el-color-primary);
+  color: white;
+  border-radius: 10px;
 }
 .content {
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px 32px;
+  position: relative;
 }
 .grid {
   display: grid;
@@ -731,6 +1063,15 @@ function closeBatchDialog() {
 }
 .batch-item-status {
   flex-shrink: 0;
+}
+
+/* 框选框 */
+.selection-box {
+  position: absolute;
+  border: 2px dashed var(--el-color-primary);
+  background: rgba(64, 158, 255, 0.15);
+  pointer-events: none;
+  z-index: 100;
 }
 
 /* 隐藏的 ModelViewer 容器：必须有真实尺寸供 WebGL 渲染，但移出可视区域 */

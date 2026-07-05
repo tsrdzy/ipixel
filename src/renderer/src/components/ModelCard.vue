@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  model: { type: Object, required: true }
+  model: { type: Object, required: true },
+  selected: { type: Boolean, default: false },
+  isDragging: { type: Boolean, default: false }
 })
-const emit = defineEmits(['click'])
+const emit = defineEmits(['select', 'dblclick'])
 
 function formatSize(bytes) {
   if (!bytes) return '0 B'
@@ -25,10 +27,32 @@ const dimText = computed(() => {
   if (!d || (!d.x && !d.y && !d.z)) return '—'
   return `${d.x} × ${d.y} × ${d.z}`
 })
+
+function handleClick(e) {
+  if (props.isDragging) {
+    return
+  }
+  console.log('[ModelCard] handleClick triggered')
+  console.log('[ModelCard] event:', {
+    ctrlKey: e.ctrlKey,
+    metaKey: e.metaKey,
+    shiftKey: e.shiftKey,
+    type: e.type,
+    target: e.target.tagName
+  })
+  console.log('[ModelCard] model id:', props.model.id)
+  console.log('[ModelCard] current selected:', props.selected)
+  emit('select', props.model, e)
+}
+
+function handleDblClick(e) {
+  e.preventDefault()
+  emit('dblclick', props.model)
+}
 </script>
 
 <template>
-  <el-card class="card" shadow="hover" @click="emit('click', model)">
+  <el-card class="card" :class="{ selected }" shadow="hover" @click="handleClick" @dblclick="handleDblClick">
     <div class="cover">
       <img v-if="model.coverBase64" :src="model.coverBase64" alt="cover" />
       <div v-else class="cover-placeholder">
@@ -66,10 +90,17 @@ const dimText = computed(() => {
 <style scoped>
 .card {
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.15s, border-color 0.2s;
+  position: relative;
 }
 .card:hover {
   transform: translateY(-2px);
+}
+.card.selected {
+  border-color: var(--el-color-primary);
+}
+.card.selected :deep(.el-card__body) {
+  background: var(--el-color-primary-light-9);
 }
 .card :deep(.el-card__body) {
   padding: 0;
