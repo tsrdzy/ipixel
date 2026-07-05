@@ -74,6 +74,7 @@ function handleDblClick(e) {
           :key="t"
           size="small"
         >
+          <span style="font-family: 'iconfont'; margin-right: 4px;">&#xeb2a;</span>
           {{ t }}
         </el-tag>
         <span v-if="model.tags.length > 4" class="more">+{{ model.tags.length - 4 }}</span>

@@ -64,17 +64,24 @@ async function handleLibCommand(cmd) {
 }
 
 const allTagsInUse = computed(() => {
-  const set = new Set()
-  state.models.forEach((m) => m.tags && m.tags.forEach((t) => set.add(t)))
-  return [...set].sort()
+  const map = new Map()
+  state.models.forEach((m) => {
+    m.tags && m.tags.forEach((t) => {
+      map.set(t, (map.get(t) || 0) + 1)
+    })
+  })
+  return [...map.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const allTypesInUse = computed(() => {
-  const set = new Set()
+  const map = new Map()
   state.models.forEach((m) => {
-    if (m.fileType) set.add(m.fileType.toLowerCase())
+    if (m.fileType) {
+      const type = m.fileType.toLowerCase()
+      map.set(type, (map.get(type) || 0) + 1)
+    }
   })
-  return [...set].sort()
+  return [...map.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const filteredModels = computed(() => {
@@ -816,10 +823,30 @@ function closeBatchDialog() {
     <div class="filter-bar">
       <div class="filter-left">
         <el-select v-model="selectedTags" multiple placeholder="标签: 全部" class="filter-select">
-          <el-option v-for="t in allTagsInUse" :key="t" :label="t" :value="t" />
+          <template #default>
+            <el-option v-for="t in allTagsInUse" :key="t.name" :value="t.name">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span>
+                  <span style="font-family: 'iconfont'; margin-right: 6px;">&#xeb2a;</span>
+                  <span>{{ t.name }}</span>
+                </span>
+                <span style="color: var(--text-3); font-size: 12px;">{{ t.count }}</span>
+              </div>
+            </el-option>
+          </template>
         </el-select>
         <el-select v-model="selectedTypes" multiple placeholder="格式: 全部" class="filter-select">
-          <el-option v-for="t in allTypesInUse" :key="t" :label="t.toUpperCase()" :value="t" />
+          <template #default>
+            <el-option v-for="t in allTypesInUse" :key="t.name" :value="t.name">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span>
+                  <span style="font-family: 'iconfont'; margin-right: 6px;">&#xeb13;</span>
+                  <span>{{ t.name.toUpperCase() }}</span>
+                </span>
+                <span style="color: var(--text-3); font-size: 12px;">{{ t.count }}</span>
+              </div>
+            </el-option>
+          </template>
         </el-select>
       </div>
       <div class="filter-right">
