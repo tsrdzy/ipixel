@@ -131,6 +131,8 @@ async function addAuxFile(role) {
 
     auxFiles.value = [...auxFiles.value, ...added]
 
+    coverSaved.value = false
+
     const newBuffer = new Uint8Array(buffer.value)
     buffer.value = null
     requestAnimationFrame(() => {
@@ -166,6 +168,8 @@ async function removeAuxFile(fileName) {
     }
 
     auxFiles.value = auxFiles.value.filter((f) => f.name !== fileName)
+
+    coverSaved.value = false
 
     const newBuffer = new Uint8Array(buffer.value)
     buffer.value = null
@@ -550,18 +554,30 @@ onMounted(async () => {
               </div>
             </el-form-item>
 
-            <el-form-item v-if="fileInfo">
-              <el-descriptions :column="1" border size="small" class="info-block">
-                <el-descriptions-item label="文件名">{{ fileInfo.fileName }}</el-descriptions-item>
-                <el-descriptions-item label="格式">{{ (fileInfo.fileType || '').toUpperCase() }}</el-descriptions-item>
-                <el-descriptions-item label="文件大小">{{ formatSize(fileInfo.fileSize) }}</el-descriptions-item>
-                <el-descriptions-item label="尺寸 (W×H×D)">
-                  {{ dimensions.x }} × {{ dimensions.y }} × {{ dimensions.z }}
-                </el-descriptions-item>
-                <el-descriptions-item label="上传时间">
-                  {{ fileInfo.uploadTime?.slice(0, 19).replace('T', ' ') }}
-                </el-descriptions-item>
-              </el-descriptions>
+            <el-form-item v-if="fileInfo" class="info-section">
+              <template #label>文件信息</template>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-file"></i> 文件名</span>
+                  <span class="info-value">{{ fileInfo.fileName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-tag"></i> 格式</span>
+                  <span class="info-value">{{ (fileInfo.fileType || '').toUpperCase() }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-cloud-download"></i> 文件大小</span>
+                  <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-box"></i> 尺寸</span>
+                  <span class="info-value">{{ dimensions.x }} × {{ dimensions.y }} × {{ dimensions.z }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-clock"></i> 上传时间</span>
+                  <span class="info-value">{{ fileInfo.uploadTime?.slice(0, 19).replace('T', ' ') }}</span>
+                </div>
+              </div>
             </el-form-item>
 
             <el-form-item v-if="fileInfo" class="files-section">
@@ -770,8 +786,50 @@ onMounted(async () => {
   text-align: center;
   padding: 8px;
 }
-.info-block {
-  width: 100%;
+.info-section {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.info-section :deep(.el-form-item__label) {
+  padding: 0 0 10px 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+.info-item:hover {
+  background: var(--bg-hover);
+}
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-3);
+  width: 80px;
+  flex-shrink: 0;
+}
+.info-label .iconfont {
+  font-size: 12px;
+}
+.info-value {
+  font-size: 12px;
+  color: var(--text-1);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .files-section :deep(.el-form-item__content) {
   flex-direction: column;

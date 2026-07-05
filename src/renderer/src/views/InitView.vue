@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
+import iconPng from '../assets/icon.png'
 
 const {
   state,
@@ -17,6 +18,7 @@ const folderPath = ref('')
 const libraryName = ref('我的模型库')
 const error = ref('')
 const busy = ref(false)
+const activeTab = ref('create') // create | open
 
 // 历史资源库列表，按最近打开时间倒序
 const sortedLibraries = computed(() => {
@@ -125,92 +127,93 @@ function formatDate(iso) {
   <div class="init">
     <el-card class="init-card" shadow="never">
       <div class="logo">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M12 2 2 7v10l10 5 10-5V7L12 2Z" />
-          <path d="M2 7l10 5 10-5M12 22V12" />
-        </svg>
+        <img :src="iconPng" alt="iModel" />
       </div>
       <h1>iModel 模型库</h1>
       <p class="subtitle">本地 3D 模型资源管理工具</p>
 
-      <div class="layout">
-        <!-- 左侧：创建新库 -->
-        <div class="panel">
-          <div class="panel-title">创建新资源库</div>
+      <!-- 选项卡切换 -->
+      <div class="tabs-wrapper">
+        <el-tabs v-model="activeTab" class="init-tabs" @tab-change="error = ''">
+          <!-- 创建新资源库 -->
+          <el-tab-pane label="创建新资源库" name="create">
+            <div class="tab-content">
+              <el-form label-position="top" class="create-form">
+                <el-form-item label="资源库名称">
+                  <el-input v-model="libraryName" placeholder="为你的模型库命名" />
+                </el-form-item>
 
-          <el-form label-position="top" class="create-form">
-            <el-form-item label="资源库名称">
-              <el-input v-model="libraryName" placeholder="为你的模型库命名" />
-            </el-form-item>
+                <el-form-item label="文件夹位置">
+                  <el-input :model-value="folderPath" placeholder="选择一个空文件夹" readonly>
+                    <template #append>
+                      <el-button @click="selectFolder"><i class="iconfont icon-folder"></i> 浏览</el-button>
+                    </template>
+                  </el-input>
+                  <div class="hint">所选文件夹必须为空，否则无法创建</div>
+                </el-form-item>
 
-            <el-form-item label="文件夹位置">
-              <el-input :model-value="folderPath" placeholder="选择一个空文件夹" readonly>
-                <template #append>
-                  <el-button @click="selectFolder"><i class="iconfont icon-folder"></i> 浏览</el-button>
-                </template>
-              </el-input>
-              <div class="hint">所选文件夹必须为空，否则无法创建</div>
-            </el-form-item>
-
-            <el-button type="primary" class="btn-block" :loading="busy" @click="handleCreate">
-              创建资源库
-            </el-button>
-          </el-form>
-        </div>
-
-        <!-- 右侧：已有库列表 -->
-        <div class="panel">
-          <div class="panel-title">
-            <span>已有资源库</span>
-            <el-button link size="small" @click="handleBrowseOpen" :disabled="busy">
-              <i class="iconfont icon-folder-plus"></i> 浏览打开
-            </el-button>
-          </div>
-
-          <el-empty v-if="sortedLibraries.length === 0" description="暂无资源库记录">
-            <div class="hint">创建一个新库，或点击"浏览打开"选择已有库文件夹</div>
-          </el-empty>
-
-          <ul v-else class="lib-list">
-            <li
-              v-for="lib in sortedLibraries"
-              :key="lib.path"
-              class="lib-item"
-              :class="{ active: lib.path === state.libraryPath }"
-            >
-              <div class="lib-info" @click="handleOpenExisting(lib.path)">
-                <div class="lib-name">
-                  <i class="iconfont icon-folder lib-icon"></i>
-                  <span>{{ lib.name }}</span>
-                </div>
-                <div class="lib-path" :title="lib.path">{{ lib.path }}</div>
-                <div class="lib-meta">
-                  <span v-if="lib.lastOpenedAt">最近打开: {{ formatDate(lib.lastOpenedAt) }}</span>
-                </div>
-              </div>
-              <div class="lib-actions">
-                <el-button
-                  circle
-                  size="small"
-                  title="打开"
-                  :disabled="busy"
-                  @click.stop="handleOpenExisting(lib.path)"
-                >
-                  <i class="iconfont icon-chevron-right"></i>
+                <el-button type="primary" class="btn-block" :loading="busy" @click="handleCreate">
+                  <i class="iconfont icon-plus"></i> 创建资源库
                 </el-button>
-                <el-button
-                  circle
-                  size="small"
-                  type="danger"
-                  title="从列表移除"
-                  @click.stop="handleRemove(lib.path)"
-                >
-                  <i class="iconfont icon-trash-alt"></i>
+              </el-form>
+            </div>
+          </el-tab-pane>
+
+          <!-- 打开已有资源库 -->
+          <el-tab-pane label="打开资源库" name="open">
+            <div class="tab-content">
+              <div class="open-header">
+                <el-button link @click="handleBrowseOpen" :disabled="busy">
+                  <i class="iconfont icon-folder-plus"></i> 浏览打开
                 </el-button>
               </div>
-            </li>
-          </ul>
-        </div>
+
+              <el-empty v-if="sortedLibraries.length === 0" description="暂无资源库记录">
+                <div class="hint">创建一个新库，或点击"浏览打开"选择已有库文件夹</div>
+              </el-empty>
+
+              <ul v-else class="lib-list">
+                <li
+                  v-for="lib in sortedLibraries"
+                  :key="lib.path"
+                  class="lib-item"
+                  :class="{ active: lib.path === state.libraryPath }"
+                >
+                  <div class="lib-info" @click="handleOpenExisting(lib.path)">
+                    <div class="lib-name">
+                      <i class="iconfont icon-folder lib-icon"></i>
+                      <span>{{ lib.name }}</span>
+                    </div>
+                    <div class="lib-path" :title="lib.path">{{ lib.path }}</div>
+                    <div class="lib-meta">
+                      <span v-if="lib.lastOpenedAt">最近打开: {{ formatDate(lib.lastOpenedAt) }}</span>
+                    </div>
+                  </div>
+                  <div class="lib-actions">
+                    <el-button
+                      circle
+                      size="small"
+                      title="打开"
+                      :disabled="busy"
+                      @click.stop="handleOpenExisting(lib.path)"
+                    >
+                      <i class="iconfont icon-chevron-right"></i>
+                    </el-button>
+                    <el-button
+                      circle
+                      size="small"
+                      type="danger"
+                      title="从列表移除"
+                      @click.stop="handleRemove(lib.path)"
+                    >
+                      <i class="iconfont icon-trash-alt"></i>
+                    </el-button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
       </div>
 
       <el-alert
@@ -236,14 +239,18 @@ function formatDate(iso) {
   overflow: auto;
 }
 .init-card {
-  width: 880px;
+  width: 600px;
   max-width: 100%;
 }
 .logo {
-  color: var(--primary);
   display: flex;
   justify-content: center;
   margin-bottom: 12px;
+}
+.logo img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 h1 {
   text-align: center;
@@ -257,27 +264,26 @@ h1 {
   font-size: 13px;
   margin-bottom: 24px;
 }
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+.tabs-wrapper {
+  width: 100%;
 }
-.panel {
-  display: flex;
-  flex-direction: column;
+.init-tabs :deep(.el-tabs__header) {
+  margin-bottom: 0;
 }
-.panel-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.init-tabs :deep(.el-tabs__content) {
+  padding: 0;
+}
+.tab-content {
+  padding: 20px;
+  border: 1px solid var(--border-soft);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  min-height: 300px;
 }
 .create-form {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 .hint {
   font-size: 11px;
@@ -287,21 +293,29 @@ h1 {
 }
 .btn-block {
   width: 100%;
-  margin-top: auto;
+  margin-top: 8px;
 }
-
+.open-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
 .lib-list {
-  flex: 1;
-  overflow-y: auto;
   max-height: 320px;
+  overflow-y: auto;
 }
 .lib-item {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
   border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.lib-item:last-child {
+  margin-bottom: 0;
 }
 .lib-item:hover {
   background: var(--bg-hover);
@@ -347,11 +361,5 @@ h1 {
 }
 .error-alert {
   margin-top: 16px;
-}
-
-@media (max-width: 760px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

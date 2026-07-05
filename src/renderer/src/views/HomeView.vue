@@ -148,10 +148,8 @@ function handleSortCommand(cmd) {
   }
 }
 
-// 上传模型下拉菜单
 function handleUploadCommand(cmd) {
-  if (cmd === 'single') goUpload()
-  else if (cmd === 'batch') handleBatchUpload()
+  if (cmd === 'batch') handleBatchUpload()
 }
 
 // ===== 批量上传 =====
@@ -481,16 +479,15 @@ function closeBatchDialog() {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <!-- 上传模型下拉菜单 -->
-        <el-dropdown trigger="click" @command="handleUploadCommand">
-          <el-button type="primary">
+        <!-- 上传模型按钮：点击直接单个上传，hover显示批量上传选项 -->
+        <el-dropdown trigger="hover" @command="handleUploadCommand">
+          <el-button type="primary" @click="goUpload()">
             <i class="iconfont icon-cloud-upload"></i>
             上传模型<i class="iconfont icon-chevron-down el-icon--right"></i>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="single">单个上传（可编辑详情）</el-dropdown-item>
-              <el-dropdown-item command="batch" divided>批量上传（自动生成封面）</el-dropdown-item>
+              <el-dropdown-item command="batch">批量上传（自动生成封面）</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
