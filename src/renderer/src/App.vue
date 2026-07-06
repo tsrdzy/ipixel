@@ -1,13 +1,13 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { useStore } from './composables/useStore'
-import InitView from './views/InitView.vue'
-import HomeView from './views/HomeView.vue'
-import UploadView from './views/UploadView.vue'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 const { state, checkStatus } = useStore()
 const { locale, t } = useI18n()
+const route = useRoute()
 
 // ===== 主题切换 =====
 const isDark = ref(true)
@@ -67,6 +67,112 @@ function toggleMaximize() {
 
 function closeApp() {
   window.api.windowControl.close()
+}
+
+// ===== 更多菜单功能 =====
+const GITHUB_REPO = 'https://github.com/tsrdzy/imodel'
+
+function openGitHubUrl(path) {
+  window.open(GITHUB_REPO + path, '_blank')
+}
+
+// ===== 侧边栏导航 =====
+const sidebarItems = [
+  { route: '/model', icon: '&#xe82a;', titleKey: 'sidebar.model' },
+  { route: '/image', icon: '&#xeb24;', titleKey: 'sidebar.image' },
+  { route: '/audio', icon: '&#xeb48;', titleKey: 'sidebar.audio' },
+  { route: '/font', icon: '&#xe699;', titleKey: 'sidebar.font' },
+  { route: '/tools', icon: '&#xeb64;', titleKey: 'sidebar.tools' }
+]
+
+async function showTutorial() {
+  await ElMessageBox.alert(
+    `<div style="text-align: left; padding: 10px;">
+      <h4 style="margin: 0 0 12px 0;">${t('menu.tutorialTitle')}</h4>
+      <p style="margin: 8px 0;">${t('menu.tutorial1')}</p>
+      <p style="margin: 8px 0;">${t('menu.tutorial2')}</p>
+      <p style="margin: 8px 0;">${t('menu.tutorial3')}</p>
+      <p style="margin: 8px 0;">${t('menu.tutorial4')}</p>
+      <p style="margin: 8px 0;">${t('menu.tutorial5')}</p>
+    </div>`,
+    t('menu.tutorial'),
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: t('common.close'),
+      customClass: 'about-dialog'
+    }
+  )
+}
+
+async function showAbout() {
+  await ElMessageBox.alert(
+    `<div style="text-align: center; padding: 10px;">
+      <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">IMODEL</div>
+      <div style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">${t('menu.version')} 1.0.0</div>
+      <div style="font-size: 13px; color: var(--text-3); line-height: 1.6;">
+        <p>${t('menu.aboutDesc')}</p>
+        <p style="margin-top: 12px;">${t('menu.license')}</p>
+      </div>
+      <div style="margin-top: 16px;">
+        <a href="${GITHUB_REPO}" target="_blank" style="color: var(--primary); text-decoration: none;">${GITHUB_REPO}</a>
+      </div>
+    </div>`,
+    t('menu.about'),
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: t('common.close'),
+      customClass: 'about-dialog'
+    }
+  )
+}
+
+async function checkUpdate() {
+  ElMessage.info(t('menu.checkingUpdate'))
+  try {
+    const response = await fetch('https://api.github.com/repos/tsrdzy/imodel/releases/latest')
+    if (!response.ok) {
+      throw new Error('Network error')
+    }
+    const data = await response.json()
+    const latestVersion = data.tag_name || '1.0.0'
+    if (latestVersion !== '1.0.0') {
+      try {
+        await ElMessageBox.confirm(
+          t('menu.newVersion', { version: latestVersion }),
+          t('menu.updateAvailable'),
+          {
+            confirmButtonText: t('menu.download'),
+            cancelButtonText: t('common.cancel'),
+            type: 'success'
+          }
+        )
+        window.open(data.html_url, '_blank')
+      } catch {
+        // 用户取消
+      }
+    } else {
+      ElMessage.success(t('menu.latestVersion'))
+    }
+  } catch {
+    ElMessage.error(t('menu.checkUpdateFailed'))
+  }
+}
+
+function handleMoreCommand(command) {
+  switch (command) {
+    case 'tutorial':
+      showTutorial()
+      break
+    case 'feedback':
+      openGitHubUrl('/issues')
+      break
+    case 'update':
+      checkUpdate()
+      break
+    case 'about':
+      showAbout()
+      break
+  }
 }
 
 onMounted(async () => {
@@ -158,9 +264,40 @@ onBeforeUnmount(() => {
 
     <!-- 内容区 -->
     <main class="app-content">
-      <InitView v-if="state.view === 'init'" />
-      <HomeView v-else-if="state.view === 'home'" />
-      <UploadView v-else-if="state.view === 'upload' || state.view === 'edit'" />
+      <!-- 左侧边栏 -->
+      <nav class="sidebar">
+        <div class="sidebar-nav">
+          <router-link
+            v-for="item in sidebarItems"
+            :key="item.route"
+            :to="item.route"
+            class="sidebar-item"
+            :class="{ active: route.path === item.route }"
+            :title="t(item.titleKey)"
+          >
+            <span class="iconfont sidebar-icon" v-html="item.icon"></span>
+          </router-link>
+        </div>
+        <div class="sidebar-bottom">
+          <el-dropdown trigger="click" @command="handleMoreCommand" placement="top-start">
+            <button class="sidebar-item" :title="t('menu.more')">
+              <span class="iconfont sidebar-icon">&#xeb3a;</span>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="tutorial">{{ t('menu.tutorial') }}</el-dropdown-item>
+                <el-dropdown-item command="feedback">{{ t('menu.feedback') }}</el-dropdown-item>
+                <el-dropdown-item command="update">{{ t('menu.checkUpdate') }}</el-dropdown-item>
+                <el-dropdown-item command="about" divided>{{ t('menu.about') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </nav>
+      <!-- 路由内容 -->
+      <div class="main-content">
+        <router-view />
+      </div>
     </main>
   </div>
 </template>
@@ -239,6 +376,25 @@ onBeforeUnmount(() => {
   background: var(--bg-hover) !important;
   color: var(--text-1) !important;
 }
+.lang-btn :deep(.el-dropdown-menu__item.is-active) {
+  background: transparent;
+  color: var(--text-1);
+}
+
+.more-dropdown {
+  -webkit-app-region: no-drag;
+}
+.more-btn {
+  width: 36px;
+  height: 30px;
+  padding: 0 !important;
+  color: var(--text-2) !important;
+  margin-left: 4px;
+}
+.more-btn:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
 
 .win-btn {
   width: 46px;
@@ -258,6 +414,57 @@ onBeforeUnmount(() => {
 }
 
 .app-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.sidebar {
+  width: 44px;
+  flex-shrink: 0;
+  background: var(--bg-soft);
+  border-right: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  user-select: none;
+}
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 4px;
+}
+.sidebar-item {
+  width: 44px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-3);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  transition: all 0.15s;
+}
+.sidebar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-1);
+}
+.sidebar-item.active {
+  color: var(--primary);
+  background: var(--bg-hover);
+}
+.sidebar-icon {
+  font-size: 18px;
+}
+
+.main-content {
   flex: 1;
   overflow: hidden;
   display: flex;

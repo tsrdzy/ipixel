@@ -49,6 +49,9 @@ export default {
     mtl: 'Material',
     texture: 'Texture',
     aux: 'Aux',
+    success: 'Success',
+    loadFailed: 'Load failed',
+    uploadSuccess: 'Upload success',
     theme: {
       dark: 'Dark',
       light: 'Light',
@@ -65,7 +68,37 @@ export default {
       japanese: '日本語',
       russian: 'Русский'
     },
-    appTitle: 'IMODEL - 3D Library'
+    appTitle: 'iPixel - Asset Library'
+  },
+  sidebar: {
+    model: 'Model Library',
+    image: 'Image Library',
+    audio: 'Audio Library',
+    font: 'Font Library',
+    tools: 'Toolbox',
+    comingSoon: 'Coming soon...'
+  },
+  menu: {
+    tutorial: 'User Guide',
+    more: 'More',
+    tutorialTitle: 'User Guide',
+    tutorial1: '1. Create Library: Click "Create Library" button, select save location and name.',
+    tutorial2: '2. Upload Models: Click upload button, supports single upload (edit details) and batch upload (auto generate cover).',
+    tutorial3: '3. Select Models: Click to select single model, hold Ctrl/Cmd for multi-select, hold Shift for range select, drag to box select.',
+    tutorial4: '4. Manage Tags: Add/remove tags in model details or batch operations for easy search and categorization.',
+    tutorial5: '5. Preview Models: Double-click to view details and 3D preview, adjust view and save cover.',
+    feedback: 'Feedback',
+    checkUpdate: 'Check for Updates',
+    checkingUpdate: 'Checking for updates...',
+    updateAvailable: 'New Version Available',
+    newVersion: 'New version {version} found. Go download?',
+    download: 'Download',
+    latestVersion: 'Already up to date',
+    checkUpdateFailed: 'Failed to check updates, please check network connection',
+    about: 'About iModel',
+    version: 'Version',
+    aboutDesc: 'A clean and efficient 3D model library management tool, supports GLB, GLTF, OBJ, STL and more formats.',
+    license: 'License: MIT License'
   },
   init: {
     title: 'Library Management',
@@ -108,6 +141,51 @@ export default {
     tagsAdded: '{count} tags added',
     deletionSuccess: 'Deletion successful',
     deletionFailed: 'Deletion failed'
+  },
+  image: {
+    duplicate: 'Image already exists',
+    confirmDelete: 'Are you sure you want to delete this image?',
+    items: 'images',
+    width: 'Width',
+    colorFilter: 'Color',
+    dimensions: 'Dimensions',
+    dominantColor: 'Dominant Color',
+    secondaryColor: 'Secondary Color',
+    detail: 'Image Details',
+    empty: 'No images yet. Click upload on the top right.',
+    searchPlaceholder: 'Search image name',
+    namePlaceholder: 'Enter image name',
+    nameRequired: 'Please enter image name',
+    fileInfo: 'File Info'
+  },
+  audio: {
+    duplicate: 'Audio already exists',
+    confirmDelete: 'Are you sure you want to delete this audio?',
+    items: 'audios',
+    duration: 'Duration',
+    sampleRate: 'Sample Rate',
+    channels: 'Channels',
+    detail: 'Audio Details',
+    empty: 'No audios yet. Click upload on the top right.',
+    searchPlaceholder: 'Search audio name',
+    namePlaceholder: 'Enter audio name',
+    nameRequired: 'Please enter audio name',
+    fileInfo: 'File Info'
+  },
+  font: {
+    duplicate: 'Font already exists',
+    confirmDelete: 'Are you sure you want to delete this font?',
+    items: 'fonts',
+    fontFamily: 'Font Family',
+    fontWeight: 'Font Weight',
+    fontStyle: 'Font Style',
+    detail: 'Font Details',
+    empty: 'No fonts yet. Click upload on the top right.',
+    searchPlaceholder: 'Search font name',
+    namePlaceholder: 'Enter font name',
+    nameRequired: 'Please enter font name',
+    fileInfo: 'File Info',
+    sampleTextTop: 'Asset Library'
   },
   upload: {
     title: 'Upload Model',

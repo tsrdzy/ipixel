@@ -49,6 +49,9 @@ export default {
     mtl: 'Material',
     texture: 'Textura',
     aux: 'Aux',
+    success: 'Éxito',
+    loadFailed: 'Error al cargar',
+    uploadSuccess: 'Carga exitosa',
     theme: {
       dark: 'Oscuro',
       light: 'Claro',
@@ -65,7 +68,37 @@ export default {
       japanese: '日本語',
       russian: 'Русский'
     },
-    appTitle: 'IMODEL - Biblioteca 3D'
+    appTitle: 'iPixel - Activos Creativos'
+  },
+  sidebar: {
+    model: 'Biblioteca de Modelos',
+    image: 'Biblioteca de Imágenes',
+    audio: 'Biblioteca de Audio',
+    font: 'Biblioteca de Fuentes',
+    tools: 'Caja de Herramientas',
+    comingSoon: 'Próximamente...'
+  },
+  menu: {
+    tutorial: 'Guía de usuario',
+    more: 'Más',
+    tutorialTitle: 'Guía de usuario',
+    tutorial1: '1. Crear biblioteca: Haga clic en el botón "Crear biblioteca", seleccione la ubicación de guardado y el nombre.',
+    tutorial2: '2. Subir modelos: Haga clic en el botón de subida, admite subida individual (editar detalles) y subida en lote (generar portada automáticamente).',
+    tutorial3: '3. Seleccionar modelos: Haga clic para seleccionar un modelo, mantenga presionado Ctrl/Cmd para seleccionar varios, mantenga presionado Shift para seleccionar un rango, arrastre para seleccionar por caja.',
+    tutorial4: '4. Gestionar etiquetas: Agregue/elimine etiquetas en los detalles del modelo o en operaciones por lote para facilitar la búsqueda y categorización.',
+    tutorial5: '5. Vista previa de modelos: Haga doble clic para ver detalles y vista previa 3D, ajuste la vista y guarde la portada.',
+    feedback: 'Enviar comentarios',
+    checkUpdate: 'Comprobar actualizaciones',
+    checkingUpdate: 'Comprobando actualizaciones...',
+    updateAvailable: 'Nueva versión disponible',
+    newVersion: 'Se encontró una nueva versión {version}. ¿Ir a descargar?',
+    download: 'Descargar',
+    latestVersion: 'Ya está actualizado',
+    checkUpdateFailed: 'Error al comprobar actualizaciones, verifique la conexión a Internet',
+    about: 'Acerca de iModel',
+    version: 'Versión',
+    aboutDesc: 'Una herramienta de gestión de biblioteca de modelos 3D limpia y eficiente, compatible con GLB, GLTF, OBJ, STL y más formatos.',
+    license: 'Licencia: MIT License'
   },
   init: {
     title: 'Gestión de biblioteca',
@@ -108,6 +141,18 @@ export default {
     tagsAdded: '{count} etiquetas añadidas',
     deletionSuccess: 'Eliminación exitosa',
     deletionFailed: 'Eliminación fallida'
+  },
+  image: {
+    duplicate: 'La imagen ya existe',
+    confirmDelete: '¿Confirmas eliminar esta imagen?',
+    items: 'imágenes',
+    width: 'Ancho',
+    colorFilter: 'Color',
+    dimensions: 'Dimensiones',
+    dominantColor: 'Color principal',
+    secondaryColor: 'Color secundario',
+    detail: 'Detalles de imagen',
+    empty: 'Sin imágenes. Haz clic en subir arriba a la derecha.'
   },
   upload: {
     title: 'Subir modelo',

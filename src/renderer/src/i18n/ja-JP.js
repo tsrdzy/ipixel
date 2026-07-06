@@ -49,6 +49,9 @@ export default {
     mtl: 'マテリアル',
     texture: 'テクスチャ',
     aux: '補助',
+    success: '成功',
+    loadFailed: '読み込み失敗',
+    uploadSuccess: 'アップロード成功',
     theme: {
       dark: 'ダーク',
       light: 'ライト',
@@ -65,7 +68,37 @@ export default {
       japanese: '日本語',
       russian: 'Русский'
     },
-    appTitle: 'IMODEL - 3Dライブラリ'
+    appTitle: 'iPixel - クリエイティブ素材庫'
+  },
+  sidebar: {
+    model: 'モデルライブラリ',
+    image: '画像ライブラリ',
+    audio: 'オーディオライブラリ',
+    font: 'フォントライブラリ',
+    tools: 'ツールボックス',
+    comingSoon: '近日公開予定...'
+  },
+  menu: {
+    tutorial: '使い方',
+    more: 'その他',
+    tutorialTitle: '使い方',
+    tutorial1: '1. ライブラリを作成：「ライブラリを作成」ボタンをクリックし、保存場所と名前を選択します。',
+    tutorial2: '2. モデルをアップロード：アップロードボタンをクリックし、単一アップロード（詳細を編集）と一括アップロード（カバーを自動生成）に対応しています。',
+    tutorial3: '3. モデルを選択：クリックして単一モデルを選択、Ctrl/Cmdを押しながら複数選択、Shiftを押しながら範囲選択、ドラッグして範囲選択します。',
+    tutorial4: '4. タグを管理：モデルの詳細または一括操作でタグを追加/削除し、検索と分類を容易にします。',
+    tutorial5: '5. モデルをプレビュー：ダブルクリックして詳細と3Dプレビューを表示し、ビューを調整してカバーを保存します。',
+    feedback: 'フィードバック',
+    checkUpdate: 'アップデートを確認',
+    checkingUpdate: 'アップデートを確認中...',
+    updateAvailable: '新しいバージョンが利用可能',
+    newVersion: '新しいバージョン {version} が見つかりました。ダウンロードしますか？',
+    download: 'ダウンロード',
+    latestVersion: 'すでに最新バージョンです',
+    checkUpdateFailed: 'アップデートの確認に失敗しました。ネットワーク接続を確認してください',
+    about: 'iModel について',
+    version: 'バージョン',
+    aboutDesc: 'GLB、GLTF、OBJ、STLなどの複数フォーマットに対応する、クリーンで効率的な3Dモデルライブラリ管理ツールです。',
+    license: 'ライセンス：MIT License'
   },
   init: {
     title: 'ライブラリ管理',
@@ -108,6 +141,18 @@ export default {
     tagsAdded: '{count} 個のタグが追加されました',
     deletionSuccess: '削除成功',
     deletionFailed: '削除失敗'
+  },
+  image: {
+    duplicate: '画像は既に存在します',
+    confirmDelete: 'この画像を削除しますか？',
+    items: '枚の画像',
+    width: '幅',
+    colorFilter: '色',
+    dimensions: '寸法',
+    dominantColor: 'メインカラー',
+    secondaryColor: 'サブカラー',
+    detail: '画像詳細',
+    empty: '画像がありません。右上のアップロードをクリックしてください。'
   },
   upload: {
     title: 'モデルをアップロード',

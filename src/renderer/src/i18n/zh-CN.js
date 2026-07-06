@@ -49,6 +49,9 @@ export default {
     mtl: '材质',
     texture: '贴图',
     aux: '辅',
+    success: '成功',
+    loadFailed: '加载失败',
+    uploadSuccess: '上传成功',
     theme: {
       dark: '暗色',
       light: '亮色',
@@ -65,7 +68,37 @@ export default {
       japanese: '日本語',
       russian: 'Русский'
     },
-    appTitle: 'IMODEL - 3D资源库'
+    appTitle: 'iPixel - 素材资源库'
+  },
+  sidebar: {
+    model: '模型资源库',
+    image: '图片资源库',
+    audio: '音频资源库',
+    font: '字体资源库',
+    tools: '工具箱',
+    comingSoon: '功能开发中，敬请期待...'
+  },
+  menu: {
+    tutorial: '使用教程',
+    more: '更多',
+    tutorialTitle: '使用教程',
+    tutorial1: '1. 创建资源库：点击「创建资源库」按钮，选择保存位置并命名。',
+    tutorial2: '2. 上传模型：点击上传按钮，支持单个上传（可编辑详情）和批量上传（自动生成封面）。',
+    tutorial3: '3. 选择模型：单击选择单个模型，按住 Ctrl/Cmd 多选，按住 Shift 连续选择，鼠标拖拽框选。',
+    tutorial4: '4. 管理标签：在模型详情或批量操作中添加/删除标签，便于分类搜索。',
+    tutorial5: '5. 预览模型：双击模型查看详细信息和3D预览，调整视角后保存封面。',
+    feedback: '意见反馈',
+    checkUpdate: '检查更新',
+    checkingUpdate: '正在检查更新...',
+    updateAvailable: '发现新版本',
+    newVersion: '发现新版本 {version}，是否前往下载？',
+    download: '下载',
+    latestVersion: '当前已是最新版本',
+    checkUpdateFailed: '检查更新失败，请检查网络连接',
+    about: '关于 iModel',
+    version: '版本',
+    aboutDesc: '一个简洁高效的3D模型资源管理工具，支持GLB、GLTF、OBJ、STL等多种格式。',
+    license: '开源协议：MIT License'
   },
   init: {
     title: '资源库管理',
@@ -108,6 +141,51 @@ export default {
     tagsAdded: '{count} 个标签已添加',
     deletionSuccess: '删除成功',
     deletionFailed: '删除失败'
+  },
+  image: {
+    duplicate: '图片已存在',
+    confirmDelete: '确认删除这张图片？',
+    items: '张图片',
+    width: '宽度',
+    colorFilter: '颜色',
+    dimensions: '尺寸',
+    dominantColor: '主色',
+    secondaryColor: '辅色',
+    detail: '图片详情',
+    empty: '暂无图片，点击右上角上传',
+    searchPlaceholder: '搜索图片名称',
+    namePlaceholder: '请输入图片名称',
+    nameRequired: '请输入图片名称',
+    fileInfo: '文件信息'
+  },
+  audio: {
+    duplicate: '音频已存在',
+    confirmDelete: '确认删除这个音频？',
+    items: '个音频',
+    duration: '时长',
+    sampleRate: '采样率',
+    channels: '声道数',
+    detail: '音频详情',
+    empty: '暂无音频，点击右上角上传',
+    searchPlaceholder: '搜索音频名称',
+    namePlaceholder: '请输入音频名称',
+    nameRequired: '请输入音频名称',
+    fileInfo: '文件信息'
+  },
+  font: {
+    duplicate: '字体已存在',
+    confirmDelete: '确认删除这个字体？',
+    items: '个字体',
+    fontFamily: '字体系列',
+    fontWeight: '字重',
+    fontStyle: '字体样式',
+    detail: '字体详情',
+    empty: '暂无字体，点击右上角上传',
+    searchPlaceholder: '搜索字体名称',
+    namePlaceholder: '请输入字体名称',
+    nameRequired: '请输入字体名称',
+    fileInfo: '文件信息',
+    sampleTextTop: '素材资源库'
   },
   upload: {
     title: '上传模型',

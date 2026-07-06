@@ -3,6 +3,10 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpc } from './lib/ipc.js'
+import { registerImageIpc } from './lib/imageIpc.js'
+import { registerAudioIpc } from './lib/audioIpc.js'
+import { registerFontIpc } from './lib/fontIpc.js'
+import { closeDB } from './lib/db.js'
 
 /** 主窗口引用，供窗口控制 IPC 使用 */
 let mainWindowRef = null
@@ -79,6 +83,9 @@ app.whenReady().then(() => {
   })
 
   registerIpc()
+  registerImageIpc()
+  registerAudioIpc()
+  registerFontIpc()
   registerWindowControls()
 
   createWindow()
@@ -89,6 +96,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  closeDB()
   if (process.platform !== 'darwin') {
     app.quit()
   }

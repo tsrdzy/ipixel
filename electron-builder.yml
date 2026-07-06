@@ -1,7 +1,7 @@
 appId: com.electron.app
 productName: imodel
 directories:
-  buildResources: build
+  buildResources: ./resources
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -17,6 +17,9 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  oneClick: false # 禁用一键安装模式
+  allowToChangeInstallationDirectory: true # 允许用户更改安装目录
+  perMachine: true # 为所有用户安装，而不是仅限当前用户
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:

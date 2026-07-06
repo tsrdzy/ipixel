@@ -49,6 +49,9 @@ export default {
     mtl: 'Matériau',
     texture: 'Texture',
     aux: 'Aux',
+    success: 'Succès',
+    loadFailed: 'Échec du chargement',
+    uploadSuccess: 'Importation réussie',
     theme: {
       dark: 'Sombre',
       light: 'Clair',
@@ -65,7 +68,37 @@ export default {
       japanese: '日本語',
       russian: 'Русский'
     },
-    appTitle: 'IMODEL - Bibliothèque 3D'
+    appTitle: 'iPixel - Ressources Créatives'
+  },
+  sidebar: {
+    model: 'Bibliothèque de Modèles',
+    image: "Bibliothèque d'Images",
+    audio: 'Bibliothèque Audio',
+    font: 'Bibliothèque de Polices',
+    tools: 'Boîte à Outils',
+    comingSoon: 'Bientôt disponible...'
+  },
+  menu: {
+    tutorial: 'Guide utilisateur',
+    more: 'Plus',
+    tutorialTitle: 'Guide utilisateur',
+    tutorial1: '1. Créer une bibliothèque : Cliquez sur le bouton "Créer une bibliothèque", sélectionnez l\'emplacement de sauvegarde et le nom.',
+    tutorial2: '2. Téléverser des modèles : Cliquez sur le bouton de téléversement, prend en charge le téléversement unique (éditer les détails) et le téléversement en lot (génération automatique de la couverture).',
+    tutorial3: '3. Sélectionner des modèles : Cliquez pour sélectionner un modèle, maintenez Ctrl/Cmd pour sélectionner plusieurs, maintenez Shift pour sélectionner une plage, faites glisser pour sélectionner par zone.',
+    tutorial4: '4. Gérer les étiquettes : Ajoutez/supprimez des étiquettes dans les détails du modèle ou dans les opérations en lot pour faciliter la recherche et la catégorisation.',
+    tutorial5: '5. Prévisualiser des modèles : Double-cliquez pour voir les détails et la prévisualisation 3D, ajustez la vue et enregistrez la couverture.',
+    feedback: 'Commentaires',
+    checkUpdate: 'Vérifier les mises à jour',
+    checkingUpdate: 'Vérification des mises à jour...',
+    updateAvailable: 'Nouvelle version disponible',
+    newVersion: 'Nouvelle version {version} trouvée. Aller télécharger ?',
+    download: 'Télécharger',
+    latestVersion: 'Déjà à jour',
+    checkUpdateFailed: 'Échec de la vérification des mises à jour, vérifiez votre connexion Internet',
+    about: 'À propos de iModel',
+    version: 'Version',
+    aboutDesc: 'Un outil de gestion de bibliothèque de modèles 3D propre et efficace, compatible avec GLB, GLTF, OBJ, STL et plus de formats.',
+    license: 'Licence : MIT License'
   },
   init: {
     title: 'Gestion de bibliothèque',
@@ -108,6 +141,18 @@ export default {
     tagsAdded: '{count} étiquettes ajoutées',
     deletionSuccess: 'Suppression réussie',
     deletionFailed: 'Suppression échouée'
+  },
+  image: {
+    duplicate: 'L\'image existe déjà',
+    confirmDelete: 'Confirmer la suppression de cette image ?',
+    items: 'images',
+    width: 'Largeur',
+    colorFilter: 'Couleur',
+    dimensions: 'Dimensions',
+    dominantColor: 'Couleur dominante',
+    secondaryColor: 'Couleur secondaire',
+    detail: 'Détails de l\'image',
+    empty: 'Aucune image. Cliquez sur importer en haut à droite.'
   },
   upload: {
     title: 'Téléverser un modèle',

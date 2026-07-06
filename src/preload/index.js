@@ -1,10 +1,25 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-/**
- * 暴露给渲染层的隔离 API
- * 所有文件读写均通过 IPC 由主进程完成，渲染层不直接接触文件系统
- */
+function base64ToBlobUrl(base64) {
+  if (!base64) return null
+  try {
+    const arr = base64.split(',')
+    const mime = arr[0].match(/:(.*?);/)[1]
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    const blob = new Blob([u8arr], { type: mime })
+    return URL.createObjectURL(blob)
+  } catch (e) {
+    console.error('[preload] base64ToBlobUrl error:', e)
+    return null
+  }
+}
+
 const api = {
   // ====== 资源库 ======
   library: {
@@ -42,12 +57,64 @@ const api = {
     loadFile: (model) => ipcRenderer.invoke('models:load-file', model),
     saveImage: (id, type, base64) =>
       ipcRenderer.invoke('models:save-image', id, type, base64),
-    readImage: (id, hasCover, hasThumb) =>
-      ipcRenderer.invoke('models:read-image', id, hasCover, hasThumb),
+    readImage: async (id, hasCover, hasThumb) => {
+      const dataUrl = await ipcRenderer.invoke('models:read-image', id, hasCover, hasThumb)
+      return base64ToBlobUrl(dataUrl)
+    },
     save: (meta) => ipcRenderer.invoke('models:save', meta),
     update: (id, patch) => ipcRenderer.invoke('models:update', id, patch),
     delete: (id) => ipcRenderer.invoke('models:delete', id),
     export: (model) => ipcRenderer.invoke('models:export', model)
+  },
+
+  // ====== 图片 ======
+  images: {
+    list: () => ipcRenderer.invoke('images:list'),
+    read: async (id, fileName) => {
+      const dataUrl = await ipcRenderer.invoke('images:read', id, fileName)
+      return base64ToBlobUrl(dataUrl)
+    },
+    upload: () => ipcRenderer.invoke('images:upload'),
+    batchUpload: () => ipcRenderer.invoke('images:batch-upload'),
+    onBatchUploadProgress: (callback) => {
+      const handler = (_e, data) => callback(data)
+      ipcRenderer.on('images:batch-upload:progress', handler)
+      return () => ipcRenderer.removeListener('images:batch-upload:progress', handler)
+    },
+    save: (meta) => ipcRenderer.invoke('images:save', meta),
+    update: (id, patch) => ipcRenderer.invoke('images:update', id, patch),
+    delete: (id) => ipcRenderer.invoke('images:delete', id),
+    export: (image) => ipcRenderer.invoke('images:export', image)
+  },
+
+  // ====== 音频 ======
+  audios: {
+    list: () => ipcRenderer.invoke('audios:list'),
+    read: async (id, fileName) => {
+      const dataUrl = await ipcRenderer.invoke('audios:read', id, fileName)
+      return base64ToBlobUrl(dataUrl)
+    },
+    upload: () => ipcRenderer.invoke('audios:upload'),
+    batchUpload: () => ipcRenderer.invoke('audios:batch-upload'),
+    save: (meta) => ipcRenderer.invoke('audios:save', meta),
+    update: (id, patch) => ipcRenderer.invoke('audios:update', id, patch),
+    delete: (id) => ipcRenderer.invoke('audios:delete', id),
+    export: (audio) => ipcRenderer.invoke('audios:export', audio)
+  },
+
+  // ====== 字体 ======
+  fonts: {
+    list: () => ipcRenderer.invoke('fonts:list'),
+    read: async (id, fileName) => {
+      const dataUrl = await ipcRenderer.invoke('fonts:read', id, fileName)
+      return base64ToBlobUrl(dataUrl)
+    },
+    upload: () => ipcRenderer.invoke('fonts:upload'),
+    batchUpload: () => ipcRenderer.invoke('fonts:batch-upload'),
+    save: (meta) => ipcRenderer.invoke('fonts:save', meta),
+    update: (id, patch) => ipcRenderer.invoke('fonts:update', id, patch),
+    delete: (id) => ipcRenderer.invoke('fonts:delete', id),
+    export: (font) => ipcRenderer.invoke('fonts:export', font)
   },
 
   // ====== 窗口控制（自定义标题栏）======
