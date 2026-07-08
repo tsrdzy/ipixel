@@ -4,7 +4,8 @@ import { computed } from 'vue'
 const props = defineProps({
   model: { type: Object, required: true },
   selected: { type: Boolean, default: false },
-  isDragging: { type: Boolean, default: false }
+  isDragging: { type: Boolean, default: false },
+  display: { type: Object, default: () => ({ name: true, tags: true, dimensions: true, fileSize: true, uploadTime: true, fileType: true }) }
 })
 const emit = defineEmits(['select', 'dblclick'])
 
@@ -58,7 +59,7 @@ function handleDblClick(e) {
       <div v-else class="cover-placeholder">
         <span>无预览图</span>
       </div>
-      <span class="file-type-tag">
+      <span v-if="display.fileType" class="file-type-tag">
         <i class="iconfont icon-file"></i>
         {{ (model.fileType || '').toUpperCase() }}
       </span>
@@ -66,9 +67,9 @@ function handleDblClick(e) {
          class="iconfont icon-movie anim-icon"
          :title="`${model.animationCount} 个动画`"></i>
     </div>
-    <div class="info">
-      <div class="title" :title="model.name">{{ model.name || '未命名模型' }}</div>
-      <div class="tags" v-if="model.tags && model.tags.length">
+    <div v-if="display.name || display.tags || display.dimensions || display.fileSize || display.uploadTime" class="info">
+      <div v-if="display.name" class="title" :title="model.name">{{ model.name || '未命名模型' }}</div>
+      <div class="tags" v-if="display.tags && model.tags && model.tags.length">
         <el-tag
           v-for="t in model.tags.slice(0, 4)"
           :key="t"
@@ -79,11 +80,11 @@ function handleDblClick(e) {
         </el-tag>
         <span v-if="model.tags.length > 4" class="more">+{{ model.tags.length - 4 }}</span>
       </div>
-      <div class="meta">
-        <span>{{ dimText }}</span>
-        <span>{{ formatSize(model.fileSize) }}</span>
+      <div v-if="display.dimensions || display.fileSize" class="meta">
+        <span v-if="display.dimensions">{{ dimText }}</span>
+        <span v-if="display.fileSize">{{ formatSize(model.fileSize) }}</span>
       </div>
-      <div class="date">{{ formatDate(model.uploadTime) }}</div>
+      <div v-if="display.uploadTime" class="date">{{ formatDate(model.uploadTime) }}</div>
     </div>
   </el-card>
 </template>

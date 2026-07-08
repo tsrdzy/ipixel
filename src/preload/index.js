@@ -30,7 +30,8 @@ const api = {
     open: (folderPath) => ipcRenderer.invoke('library:open', folderPath),
     remove: (folderPath) => ipcRenderer.invoke('library:remove', folderPath),
     rename: (folderPath, newName) => ipcRenderer.invoke('library:rename', folderPath, newName),
-    selectAndOpen: () => ipcRenderer.invoke('library:select-and-open')
+    selectAndOpen: () => ipcRenderer.invoke('library:select-and-open'),
+    updateSettings: (settings) => ipcRenderer.invoke('library:updateSettings', settings)
   },
 
   // ====== 标签 ======
@@ -84,7 +85,8 @@ const api = {
     save: (meta) => ipcRenderer.invoke('images:save', meta),
     update: (id, patch) => ipcRenderer.invoke('images:update', id, patch),
     delete: (id) => ipcRenderer.invoke('images:delete', id),
-    export: (image) => ipcRenderer.invoke('images:export', image)
+    export: (image) => ipcRenderer.invoke('images:export', image),
+    saveSplitResult: (file) => ipcRenderer.invoke('images:save-split-result', file)
   },
 
   // ====== 音频 ======

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, shallowRef, nextTick } from 'vue'
+import { ref, computed, shallowRef, nextTick, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -7,7 +7,7 @@ import { useStore } from '../composables/useStore'
 import ModelCard from '../components/ModelCard.vue'
 import ModelViewer from '../components/ModelViewer.vue'
 
-const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll, deleteModel } = useStore()
+const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll, deleteModel, saveSettings } = useStore()
 const { t } = useI18n()
 
 const keyword = ref('')
@@ -19,6 +19,31 @@ const selectedTypes = ref([]) // 选中的格式筛选
 const selectedIds = ref([]) // 选中的模型ID列表
 const isMultiSelect = ref(false) // 是否处于多选模式
 const anchorId = ref(null) // shift连续选择的基准ID
+
+const previewSize = ref(state.library?.settings?.modelPreviewSize || 5)
+const gridMinWidth = computed(() => 100 + (previewSize.value - 1) * 30)
+const displaySettings = reactive(state.library?.settings?.modelDisplay || { name: true, tags: true, dimensions: true, fileSize: true, uploadTime: true, fileType: true })
+
+function onPreviewSizeChange() {
+  saveSettings({ modelPreviewSize: previewSize.value })
+}
+function onDisplayChange() {
+  saveSettings({ modelDisplay: { ...displaySettings } })
+}
+const allFieldsSelected = computed({
+  get() {
+    return Object.values(displaySettings).every(v => v)
+  },
+  set(val) {
+    Object.keys(displaySettings).forEach(key => {
+      displaySettings[key] = val
+    })
+    onDisplayChange()
+  }
+})
+function onSelectAll(val) {
+  allFieldsSelected.value = val
+}
 
 // 框选相关
 const isDragging = ref(false)
@@ -791,6 +816,36 @@ function closeBatchDialog() {
         </el-input>
       </div>
       <div class="topbar-right">
+        <el-popover trigger="click" placement="bottom" :width="240">
+          <template #reference>
+            <el-button type="primary" :title="t('common.previewSize')">
+              <i class="iconfont">&#xeb56;</i>
+            </el-button>
+          </template>
+          <div style="padding: 8px 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; color: var(--text-2);">{{ t('common.previewSize') }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: var(--el-color-primary);">{{ previewSize }}</span>
+            </div>
+            <el-slider v-model="previewSize" :min="1" :max="10" :step="1" @change="onPreviewSizeChange" />
+          </div>
+        </el-popover>
+        <el-popover trigger="click" placement="bottom" :width="200">
+          <template #reference>
+            <el-button type="primary" :title="t('common.displayFields')">
+              <i class="iconfont">&#xeb14;</i>
+            </el-button>
+          </template>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 4px;">
+            <el-checkbox v-model="allFieldsSelected" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.name" @change="onDisplayChange">{{ t('common.name') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.tags" @change="onDisplayChange">{{ t('common.tags') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.dimensions" @change="onDisplayChange">{{ t('common.dimensions') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileSize" @change="onDisplayChange">{{ t('common.fileSize') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.uploadTime" @change="onDisplayChange">{{ t('common.uploadTime') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileType" @change="onDisplayChange">{{ t('common.format') }}</el-checkbox>
+          </div>
+        </el-popover>
         <el-dropdown trigger="click" popper-class="sort-popper" @command="handleSortCommand">
           <el-button type="primary">
             <i class="iconfont icon-sort"></i>
@@ -877,6 +932,7 @@ function closeBatchDialog() {
           :model="m"
           :selected="isSelected(m.id)"
           :is-dragging="isDragging"
+          :display="displaySettings"
           :data-model-id="m.id"
           @select="handleSelect"
           @dblclick="handleDblClick"
@@ -1069,7 +1125,7 @@ function closeBatchDialog() {
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(v-bind(gridMinWidth + 'px'), 1fr));
   gap: 16px;
 }
 

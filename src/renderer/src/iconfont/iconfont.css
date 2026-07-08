@@ -1,6 +1,6 @@
 @font-face {
   font-family: "iconfont"; /* Project id 5080175 */
-  src: url('iconfont.woff2?t=1783273059106') format('woff2');
+  src: url('iconfont.woff2?t=1783518627544') format('woff2');
 }
 
 .iconfont {
@@ -9,6 +9,10 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-pause:before {
+  content: "\eb4b";
 }
 
 .icon-clock:before {

@@ -1,13 +1,14 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import WaveSurfer from 'wavesurfer.js'
 import { useStore } from '../composables/useStore'
 import { useAudioState } from '../composables/useAudioState'
 
 const router = useRouter()
-const { state, switchLibrary, renameLibrary } = useStore()
+const { state, switchLibrary, renameLibrary, saveSettings } = useStore()
 const { setPendingUpload, setEditingAudio } = useAudioState()
 const { t } = useI18n()
 
@@ -20,6 +21,30 @@ const selectedFormats = ref([])
 const selectedIds = ref([])
 const isMultiSelect = ref(false)
 const anchorId = ref(null)
+const previewSize = ref(state.library?.settings?.audioPreviewSize || 5)
+const cardHeight = computed(() => 50 + (previewSize.value - 1) * 10) // 50px ~ 140px
+const displaySettings = reactive(state.library?.settings?.audioDisplay || { name: true, tags: true, duration: true, fileSize: true, uploadTime: true, fileType: true, sampleRate: true, channels: true })
+
+function onPreviewSizeChange() {
+  saveSettings({ audioPreviewSize: previewSize.value })
+}
+function onDisplayChange() {
+  saveSettings({ audioDisplay: { ...displaySettings } })
+}
+const allFieldsSelected = computed({
+  get() {
+    return Object.values(displaySettings).every(v => v)
+  },
+  set(val) {
+    Object.keys(displaySettings).forEach(key => {
+      displaySettings[key] = val
+    })
+    onDisplayChange()
+  }
+})
+function onSelectAll(val) {
+  allFieldsSelected.value = val
+}
 const loading = ref(false)
 
 const isDragging = ref(false)
@@ -31,9 +56,14 @@ let lastMouseX = 0
 let lastMouseY = 0
 
 const playingId = ref(null)
+const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
-const audioElement = ref(null)
+const volume = ref(1)
+const playbackRate = ref(1)
+const isLooping = ref(false)
+let wavesurfer = null
+const waveContainers = {}
 
 const allTagsInUse = computed(() => {
   const map = new Map()
@@ -103,8 +133,8 @@ function formatTime(time) {
 
 function formatDuration(sec) {
   if (!sec || sec <= 0) return '00:00'
-  const minutes = Math.floor(sec)
-  const seconds = Math.floor((sec - minutes) * 100)
+  const minutes = Math.floor(sec / 60)
+  const seconds = Math.floor(sec % 60)
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 }
 
@@ -445,24 +475,41 @@ function handleMouseUp(e) {
 }
 
 function handleProgressClick(audio, e) {
-  if (!audioElement.value || playingId.value !== audio.id) return
+  if (!wavesurfer || playingId.value !== audio.id) return
   const rect = e.currentTarget.getBoundingClientRect()
   const percent = (e.clientX - rect.left) / rect.width
-  const newTime = Math.max(0, Math.min(audio.duration || 0, percent * (audio.duration || 0)))
-  audioElement.value.currentTime = newTime
-  currentTime.value = newTime
+  wavesurfer.seekTo(Math.max(0, Math.min(1, percent)))
+}
+
+function getWaveColors() {
+  const styles = getComputedStyle(document.documentElement)
+  const waveColor = styles.getPropertyValue('--text-3').trim() || 'rgba(255, 255, 255, 0.3)'
+  const progressColor = styles.getPropertyValue('--text-1').trim() || 'rgba(255, 255, 255, 0.9)'
+  return { waveColor, progressColor }
 }
 
 async function togglePlay(audio) {
   if (playingId.value === audio.id) {
-    if (audioElement.value) { audioElement.value.pause() }
-    playingId.value = null
-    currentTime.value = 0
+    if (wavesurfer) {
+      if (isPlaying.value) {
+        wavesurfer.pause()
+      } else {
+        wavesurfer.play()
+      }
+    }
     return
   }
-  if (audioElement.value) { audioElement.value.pause() }
+
+  if (wavesurfer) {
+    wavesurfer.destroy()
+    wavesurfer = null
+  }
+
   playingId.value = audio.id
+  isPlaying.value = false
+  currentTime.value = 0
   duration.value = audio.duration || 0
+
   try {
     const src = await window.api.audios.read(audio.id, audio.fileName)
     if (!src) {
@@ -471,31 +518,93 @@ async function togglePlay(audio) {
       return
     }
 
-    const audioEl = new Audio(src)
-    audioElement.value = audioEl
+    await nextTick()
+    const container = waveContainers[audio.id]
+    if (!container) {
+      ElMessage.error('无法找到播放容器')
+      playingId.value = null
+      return
+    }
 
-    audioEl.addEventListener('timeupdate', () => {
-      currentTime.value = audioEl.currentTime
+    const { waveColor, progressColor } = getWaveColors()
+
+    wavesurfer = WaveSurfer.create({
+      container: container,
+      waveColor: waveColor,
+      progressColor: progressColor,
+      url: src,
+      height: 40,
+      barWidth: 2,
+      barGap: 1,
+      barRadius: 2,
     })
 
-    audioEl.addEventListener('ended', () => {
-      playingId.value = null
-      currentTime.value = 0
-      audioElement.value = null
+    wavesurfer.setVolume(volume.value)
+    wavesurfer.setPlaybackRate(playbackRate.value)
+
+    wavesurfer.on('timeupdate', (t) => {
+      currentTime.value = t
+      if (isLooping.value && duration.value > 0 && t >= duration.value - 0.1) {
+        setTimeout(() => {
+          if (wavesurfer) {
+            wavesurfer.seekTo(0)
+            wavesurfer.play()
+          }
+        }, 100)
+      }
     })
 
-    audioEl.addEventListener('error', () => {
+    wavesurfer.on('ready', () => {
+      duration.value = wavesurfer.getDuration()
+      wavesurfer.play()
+    })
+
+    wavesurfer.on('play', () => {
+      isPlaying.value = true
+    })
+
+    wavesurfer.on('pause', () => {
+      isPlaying.value = false
+    })
+
+    wavesurfer.on('ended', () => {
+      if (!isLooping.value) {
+        isPlaying.value = false
+        currentTime.value = 0
+        wavesurfer.seekTo(0)
+      }
+    })
+
+    wavesurfer.on('error', () => {
       playingId.value = null
-      audioElement.value = null
+      isPlaying.value = false
       ElMessage.error('播放失败')
     })
-
-    await audioEl.play()
   } catch (e) {
     console.error('播放失败:', e)
     playingId.value = null
+    isPlaying.value = false
     ElMessage.error(e.message || '播放失败')
   }
+}
+
+function handleVolumeChange(val) {
+  volume.value = val
+  if (wavesurfer) {
+    wavesurfer.setVolume(val)
+  }
+}
+
+function handleRateChange(val) {
+  playbackRate.value = val
+  if (wavesurfer) {
+    wavesurfer.setPlaybackRate(val)
+  }
+}
+
+function toggleLoop() {
+  isLooping.value = !isLooping.value
+  console.log('[AudioLoop] toggleLoop called, isLooping:', isLooping.value)
 }
 
 onMounted(() => {
@@ -503,9 +612,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (audioElement.value) {
-    audioElement.value.pause()
-    audioElement.value = null
+  if (wavesurfer) {
+    wavesurfer.destroy()
+    wavesurfer = null
   }
 })
 </script>
@@ -540,6 +649,38 @@ onUnmounted(() => {
         </el-input>
       </div>
       <div class="topbar-right">
+        <el-popover trigger="click" placement="bottom" :width="240">
+          <template #reference>
+            <el-button type="primary" :title="t('common.previewSize')">
+              <i class="iconfont">&#xeb56;</i>
+            </el-button>
+          </template>
+          <div style="padding: 8px 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; color: var(--text-2);">{{ t('common.previewSize') }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: var(--el-color-primary);">{{ previewSize }}</span>
+            </div>
+            <el-slider v-model="previewSize" :min="1" :max="10" :step="1" @change="onPreviewSizeChange" />
+          </div>
+        </el-popover>
+        <el-popover trigger="click" placement="bottom" :width="200">
+          <template #reference>
+            <el-button type="primary" :title="t('common.displayFields')">
+              <i class="iconfont">&#xeb14;</i>
+            </el-button>
+          </template>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 4px;">
+            <el-checkbox v-model="allFieldsSelected" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.name" @change="onDisplayChange">{{ t('common.name') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.tags" @change="onDisplayChange">{{ t('common.tags') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.duration" @change="onDisplayChange">{{ t('audio.duration') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileSize" @change="onDisplayChange">{{ t('common.fileSize') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.uploadTime" @change="onDisplayChange">{{ t('common.uploadTime') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileType" @change="onDisplayChange">{{ t('common.format') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.sampleRate" @change="onDisplayChange">{{ t('audio.sampleRate') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.channels" @change="onDisplayChange">{{ t('audio.channels') }}</el-checkbox>
+          </div>
+        </el-popover>
         <el-dropdown trigger="click" popper-class="sort-popper" @command="handleSortCommand">
           <el-button type="primary">
             <i class="iconfont icon-sort"></i>
@@ -629,27 +770,63 @@ onUnmounted(() => {
           @dblclick="handleDblClick(audio)"
         >
           <div class="audio-top">
-            <div class="audio-play-btn" @click.stop="togglePlay(audio)">
-              <i class="iconfont" v-if="playingId === audio.id">&#xeb4b;</i>
+            <div class="audio-play-btn" @click.stop="togglePlay(audio)" @dblclick.stop>
+              <i class="iconfont" v-if="playingId === audio.id && isPlaying">&#xeb4b;</i>
               <i class="iconfont" v-else>&#xeb4d;</i>
             </div>
-            <div class="audio-name" :title="audio.name || audio.fileName">{{ audio.name || audio.fileName }}</div>
+            <div v-if="displaySettings.name" class="audio-name" :title="audio.name || audio.fileName">{{ audio.name || audio.fileName }}</div>
           </div>
-          <div class="audio-progress" v-if="playingId === audio.id">
-            <div class="progress-bar" @click.stop="handleProgressClick(audio, $event)">
-              <div class="progress-fill" :style="{ width: duration > 0 ? (currentTime / duration * 100) + '%' : '0%' }"></div>
-              <div class="progress-thumb" :style="{ left: duration > 0 ? (currentTime / duration * 100) + '%' : '0%' }"></div>
+          <div class="audio-waveform" v-if="playingId === audio.id">
+            <div :ref="el => { if (el) waveContainers[audio.id] = el }" class="wave-container" @click="handleProgressClick(audio, $event)" @dblclick.stop></div>
+            <span class="progress-time">{{ formatDuration(currentTime) }} / {{ formatDuration(duration) }}</span>
+          </div>
+          <div class="audio-controls" v-if="playingId === audio.id" @dblclick.stop>
+            <div class="control-item">
+              <div class="volume-control">
+                <span class="control-text">音量</span>
+                <el-slider
+                  v-model="volume"
+                  :min="0"
+                  :max="1"
+                  :step="0.01"
+                  :show-tooltip="false"
+                  class="volume-slider"
+                  @input="handleVolumeChange"
+                  @click.stop
+                  @mousedown.stop
+                />
+              </div>
             </div>
-            <span class="progress-time">{{ formatDuration(currentTime) }} / {{ formatDuration(audio.duration) }}</span>
+            <div class="control-item">
+              <el-select v-model="playbackRate" size="small" class="rate-select" @change="handleRateChange" @click.stop>
+                <el-option :value="0.5" label="0.5x" />
+                <el-option :value="0.75" label="0.75x" />
+                <el-option :value="1" label="1x" />
+                <el-option :value="1.25" label="1.25x" />
+                <el-option :value="1.5" label="1.5x" />
+                <el-option :value="2" label="2x" />
+              </el-select>
+            </div>
+            <div class="control-item">
+              <button
+                class="loop-btn"
+                :class="{ active: isLooping }"
+                @click.stop="toggleLoop"
+                @dblclick.stop
+                :title="isLooping ? '取消循环' : '循环播放'"
+              >
+                <span class="loop-text">{{ isLooping ? '循环中' : '循环' }}</span>
+              </button>
+            </div>
           </div>
-          <div class="audio-meta">
-            <span>{{ (audio.fileType || '').toUpperCase() }}</span>
-            <span>{{ formatDuration(audio.duration) }}</span>
-            <span>{{ formatSize(audio.fileSize) }}</span>
-            <span v-if="audio.channels">{{ audio.channels }}ch</span>
-            <span v-if="audio.sampleRate">{{ audio.sampleRate / 1000 }}kHz</span>
+          <div v-if="displaySettings.fileType || displaySettings.duration || displaySettings.fileSize || displaySettings.channels || displaySettings.sampleRate" class="audio-meta">
+            <span v-if="displaySettings.fileType">{{ (audio.fileType || '').toUpperCase() }}</span>
+            <span v-if="displaySettings.duration">{{ formatDuration(audio.duration) }}</span>
+            <span v-if="displaySettings.fileSize">{{ formatSize(audio.fileSize) }}</span>
+            <span v-if="displaySettings.channels && audio.channels">{{ audio.channels }}ch</span>
+            <span v-if="displaySettings.sampleRate && audio.sampleRate">{{ audio.sampleRate / 1000 }}kHz</span>
           </div>
-          <div class="audio-tags">
+          <div v-if="displaySettings.tags" class="audio-tags">
             <span v-for="tag in audio.tags?.slice(0, 3)" :key="tag" class="audio-tag">{{ tag }}</span>
             <span v-if="audio.tags?.length > 3" class="audio-tag">+{{ audio.tags.length - 3 }}</span>
           </div>
@@ -779,7 +956,8 @@ onUnmounted(() => {
   border-radius: 8px;
   border: 2px solid transparent;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, min-height 0.2s;
+  min-height: v-bind(cardHeight + 'px');
 }
 .audio-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -817,45 +995,75 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.audio-progress {
+.audio-waveform {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 8px;
   padding-left: 48px;
 }
-.progress-bar {
+.wave-container {
   flex: 1;
-  height: 6px;
-  background: var(--border-soft);
-  border-radius: 3px;
-  position: relative;
+  min-width: 0;
   cursor: pointer;
-}
-.progress-bar:hover {
-  background: var(--text-3);
-}
-.progress-fill {
-  height: 100%;
-  background: var(--el-color-primary);
-  border-radius: 3px;
-  transition: width 0.1s;
-}
-.progress-thumb {
-  position: absolute;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  background: var(--el-color-primary);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: left 0.1s;
 }
 .progress-time {
   font-size: 11px;
   color: var(--text-3);
   min-width: 80px;
   text-align: right;
+  white-space: nowrap;
+}
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 48px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.control-text {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.volume-slider {
+  width: 100px;
+}
+.rate-select {
+  width: 80px;
+}
+.loop-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.loop-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.loop-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.loop-text {
+  font-size: 12px;
 }
 .audio-meta {
   display: flex;

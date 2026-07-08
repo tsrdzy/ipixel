@@ -1,11 +1,11 @@
-<script setup>import { ref, computed, onMounted } from 'vue';
+<script setup>import { ref, computed, onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useStore } from '../composables/useStore';
 import { useFontState } from '../composables/useFontState';
 const router = useRouter();
-const { state, switchLibrary, renameLibrary } = useStore();
+const { state, switchLibrary, renameLibrary, saveSettings } = useStore();
 const { setPendingUpload, setEditingFont } = useFontState();
 const { t } = useI18n();
 const fonts = ref([]);
@@ -18,6 +18,32 @@ const selectedIds = ref([]);
 const isMultiSelect = ref(false);
 const anchorId = ref(null);
 const loading = ref(false);
+const previewSize = ref(state.library?.settings?.fontPreviewSize || 5);
+const gridMinWidth = computed(() => 100 + (previewSize.value - 1) * 30);
+const previewFontSizeTop = computed(() => 18 + (previewSize.value - 1) * 4);
+const previewFontSizeBottom = computed(() => 26 + (previewSize.value - 1) * 6);
+const displaySettings = reactive(state.library?.settings?.fontDisplay || { name: true, tags: true, fontFamily: true, fontWeight: true, fontStyle: true, fileSize: true, uploadTime: true, fileType: true });
+
+function onPreviewSizeChange() {
+  saveSettings({ fontPreviewSize: previewSize.value });
+}
+function onDisplayChange() {
+  saveSettings({ fontDisplay: { ...displaySettings } });
+}
+const allFieldsSelected = computed({
+  get() {
+    return Object.values(displaySettings).every(v => v)
+  },
+  set(val) {
+    Object.keys(displaySettings).forEach(key => {
+      displaySettings[key] = val
+    })
+    onDisplayChange()
+  }
+})
+function onSelectAll(val) {
+  allFieldsSelected.value = val
+}
 const isDragging = ref(false);
 const dragStartGlobal = ref({ x: 0, y: 0 });
 const dragEndGlobal = ref({ x: 0, y: 0 });
@@ -477,6 +503,38 @@ onMounted(() => {
         </el-input>
       </div>
       <div class="topbar-right">
+        <el-popover trigger="click" placement="bottom" :width="240">
+          <template #reference>
+            <el-button type="primary" :title="t('common.previewSize')">
+              <i class="iconfont">&#xeb56;</i>
+            </el-button>
+          </template>
+          <div style="padding: 8px 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; color: var(--text-2);">{{ t('common.previewSize') }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: var(--el-color-primary);">{{ previewSize }}</span>
+            </div>
+            <el-slider v-model="previewSize" :min="1" :max="10" :step="1" @change="onPreviewSizeChange" />
+          </div>
+        </el-popover>
+        <el-popover trigger="click" placement="bottom" :width="200">
+          <template #reference>
+            <el-button type="primary" :title="t('common.displayFields')">
+              <i class="iconfont">&#xeb14;</i>
+            </el-button>
+          </template>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 4px;">
+            <el-checkbox v-model="allFieldsSelected" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.name" @change="onDisplayChange">{{ t('common.name') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.tags" @change="onDisplayChange">{{ t('common.tags') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fontFamily" @change="onDisplayChange">{{ t('font.fontFamily') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fontWeight" @change="onDisplayChange">{{ t('font.fontWeight') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fontStyle" @change="onDisplayChange">{{ t('font.fontStyle') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileSize" @change="onDisplayChange">{{ t('common.fileSize') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.uploadTime" @change="onDisplayChange">{{ t('common.uploadTime') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileType" @change="onDisplayChange">{{ t('common.format') }}</el-checkbox>
+          </div>
+        </el-popover>
         <el-dropdown trigger="click" popper-class="sort-popper" @command="handleSortCommand">
           <el-button type="primary">
             <i class="iconfont icon-sort"></i>
@@ -565,7 +623,7 @@ onMounted(() => {
           @click="handleSelect(font, $event)"
           @dblclick="handleDblClick(font)"
         >
-          <span class="file-type-badge">{{ (font.fileType || '').toUpperCase() }}</span>
+          <span v-if="displaySettings.fileType" class="file-type-badge">{{ (font.fileType || '').toUpperCase() }}</span>
           <div class="font-preview">
             <div class="preview-text-top" :style="{ fontFamily: font.hasLoaded ? font.fontFamily : 'inherit', fontWeight: font.fontWeight, fontStyle: font.fontStyle }">
               {{ t('font.sampleTextTop') }}
@@ -574,11 +632,11 @@ onMounted(() => {
               iPixel
             </div>
           </div>
-          <div class="font-info">
-            <div class="font-name" :title="font.name || font.fileName">{{ font.name || font.fileName }}</div>
-            <div class="font-meta">
-              <span>{{ font.fontFamily }}</span>
-              <span>{{ formatSize(font.fileSize) }}</span>
+          <div v-if="displaySettings.name || displaySettings.fontFamily || displaySettings.fileSize" class="font-info">
+            <div v-if="displaySettings.name" class="font-name" :title="font.name || font.fileName">{{ font.name || font.fileName }}</div>
+            <div v-if="displaySettings.fontFamily || displaySettings.fileSize" class="font-meta">
+              <span v-if="displaySettings.fontFamily">{{ font.fontFamily }}</span>
+              <span v-if="displaySettings.fileSize">{{ formatSize(font.fileSize) }}</span>
             </div>
           </div>
         </div>
@@ -697,7 +755,7 @@ onMounted(() => {
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(v-bind(gridMinWidth + 'px'), 1fr));
   gap: 16px;
 }
 
@@ -737,15 +795,15 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
 }
 .preview-text-top {
-  font-size: 14px;
+  font-size: v-bind(previewFontSizeTop + 'px');
   color: var(--text-1);
   margin-bottom: 8px;
 }
 .preview-text-bottom {
-  font-size: 18px;
+  font-size: v-bind(previewFontSizeBottom + 'px');
   color: var(--text-2);
   font-weight: 700;
 }

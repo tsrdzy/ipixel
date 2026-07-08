@@ -101,6 +101,7 @@ async function handleSave() {
     const meta = {
       id: String(imageId.value),
       name: String(name.value.trim()),
+      description: String(description.value.trim()),
       fileName: String(fileInfo.value.fileName),
       fileType: String(fileInfo.value.fileType.toLowerCase()),
       fileSize: Number(fileInfo.value.fileSize),
@@ -227,103 +228,123 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="upload-view">
-    <!-- 顶栏 -->
+  <div class="upload">
     <header class="topbar">
-      <div class="topbar-left">
-        <el-button text @click="handleBack">
-          <i class="iconfont icon-arrow-left"></i> {{ t('common.back') }}
+      <el-button text @click="handleBack"><i class="iconfont icon-chevron-left"></i> {{ t('common.back') }}</el-button>
+      <span class="title">{{ isEdit ? t('image.detail') : t('common.upload') }}</span>
+      <div class="topbar-actions">
+        <el-button v-if="isEdit" :loading="exporting" @click="handleExport" :title="t('common.export')">
+          <i class="iconfont icon-cloud-download"></i>
+          {{ exporting ? t('common.exporting') : t('common.export') }}
         </el-button>
-      </div>
-      <div class="topbar-right">
-        <el-button v-if="isEdit" :loading="exporting" @click="handleExport">
-          <i class="iconfont icon-download"></i> {{ t('common.export') }}
-        </el-button>
-        <el-button v-if="isEdit" type="danger" @click="handleDelete">
-          <i class="iconfont icon-trash-alt"></i> {{ t('common.delete') }}
+        <el-button v-if="isEdit" type="danger" plain @click="handleDelete">
+          <i class="iconfont icon-trash-alt"></i>
+          {{ t('common.delete') }}
         </el-button>
         <el-button type="primary" :loading="saving" @click="handleSave">
-          <i class="iconfont icon-save"></i> {{ t('common.save') }}
+          {{ saving ? t('common.saving') : t('common.save') }}
         </el-button>
       </div>
     </header>
 
-    <!-- 主体 -->
-    <main class="main">
-      <!-- 左侧：图片预览 -->
-      <div class="preview-panel">
-        <div v-if="hasFile" class="preview-wrapper">
-          <img v-if="imageSrc" :src="imageSrc" class="preview-img" draggable="false" />
-          <div v-else class="preview-placeholder">
-            <span class="iconfont" style="font-size: 48px; color: var(--text-3);">&#xeb24;</span>
+    <div class="body">
+      <div class="viewer-panel">
+        <div class="viewer-container">
+          <div v-if="hasFile && imageSrc" class="preview-wrapper">
+            <img :src="imageSrc" class="preview-img" draggable="false" />
+          </div>
+          <div v-else-if="hasFile" class="viewer-loading">
+            <i class="iconfont icon-sync is-loading loading-icon"></i>
+            <p>{{ t('common.loading') }}...</p>
+          </div>
+          <div v-else class="viewer-empty" @click="selectFile">
+            <el-empty :description="t('common.upload')">
+              <p class="formats">支持 JPG / PNG / WebP / GIF 等格式</p>
+            </el-empty>
           </div>
         </div>
-        <div v-else class="select-area" @click="selectFile">
-          <div class="select-icon">
-            <span class="iconfont" style="font-size: 48px;">&#xeb24;</span>
-          </div>
-          <div class="select-text">{{ t('common.upload') }}</div>
-          <div class="select-hint">支持 JPG / PNG / WebP / GIF 等格式</div>
-        </div>
+        <p class="tip">{{ t('image.detail') }}</p>
       </div>
 
-      <!-- 右侧：信息表单 -->
-      <div class="info-panel">
-        <div class="form-group">
-          <label>{{ t('common.name') }}</label>
-          <el-input v-model="name" :placeholder="t('image.namePlaceholder')" maxlength="100" show-word-limit />
+      <div class="form-panel">
+        <div v-if="!hasFile" class="form-empty">
+          <el-button type="primary" size="large" @click="selectFile">
+            {{ t('common.upload') }}
+          </el-button>
         </div>
 
-        <div class="form-group">
-          <label>{{ t('common.tags') }}</label>
-          <TagInput v-model="tags" />
-        </div>
+        <template v-else>
+          <el-form label-position="top" class="upload-form">
+            <el-form-item :label="t('common.name')" required>
+              <el-input v-model="name" :placeholder="t('image.namePlaceholder')" />
+            </el-form-item>
 
-        <div class="form-group">
-          <label>{{ t('image.fileInfo') }}</label>
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-label">{{ t('upload.fileName') }}</span>
-              <span class="info-value">{{ fileInfo.fileName }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.format') }}</span>
-              <span class="info-value">{{ fileInfo.fileType }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.fileSize') }}</span>
-              <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('image.dimensions') }}</span>
-              <span class="info-value">{{ fileInfo.width }} × {{ fileInfo.height }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('image.dominantColor') }}</span>
-              <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
-                <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.dominantColor] || '#ccc' }"></span>
-                {{ fileInfo.dominantColor }}
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('image.secondaryColor') }}</span>
-              <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
-                <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.secondaryColor] || '#ccc' }"></span>
-                {{ fileInfo.secondaryColor }}
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.uploadTime') }}</span>
-              <span class="info-value">{{ formatTime(fileInfo.uploadTime) }}</span>
-            </div>
-          </div>
-        </div>
+            <el-form-item :label="t('upload.description')">
+              <el-input
+                v-model="description"
+                type="textarea"
+                :rows="3"
+                :placeholder="t('upload.descriptionPlaceholder')"
+              />
+            </el-form-item>
 
-        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+            <el-form-item :label="t('common.tags')">
+              <TagInput v-model="tags" />
+            </el-form-item>
+
+            <el-form-item class="info-section">
+              <template #label>{{ t('image.fileInfo') }}</template>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-file"></i> {{ t('upload.fileName') }}</span>
+                  <span class="info-value">{{ fileInfo.fileName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-tag"></i> {{ t('common.format') }}</span>
+                  <span class="info-value">{{ fileInfo.fileType }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-cloud-download"></i> {{ t('common.fileSize') }}</span>
+                  <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-box"></i> {{ t('image.dimensions') }}</span>
+                  <span class="info-value">{{ fileInfo.width }} × {{ fileInfo.height }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-image"></i> {{ t('image.dominantColor') }}</span>
+                  <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
+                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.dominantColor] || '#ccc' }"></span>
+                    {{ fileInfo.dominantColor }}
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-image"></i> {{ t('image.secondaryColor') }}</span>
+                  <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
+                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.secondaryColor] || '#ccc' }"></span>
+                    {{ fileInfo.secondaryColor }}
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-clock"></i> {{ t('common.uploadTime') }}</span>
+                  <span class="info-value">{{ formatTime(fileInfo.uploadTime) }}</span>
+                </div>
+              </div>
+            </el-form-item>
+          </el-form>
+
+          <el-alert
+            v-if="errorMsg"
+            :title="errorMsg"
+            type="error"
+            show-icon
+            :closable="false"
+            class="error-alert"
+          />
+        </template>
       </div>
-    </main>
+    </div>
 
-    <!-- Toast -->
     <transition name="fade">
       <div v-if="toast.show" class="toast" :class="toast.type">
         {{ toast.msg }}
@@ -333,7 +354,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.upload-view {
+.upload {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -342,33 +364,42 @@ onMounted(async () => {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
+  gap: 12px;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
-.topbar-left {
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+.topbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.main {
+.body {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
-.preview-panel {
+.viewer-panel {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+}
+.viewer-container {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  overflow: hidden;
 }
 .preview-wrapper {
   max-width: 100%;
@@ -381,85 +412,105 @@ onMounted(async () => {
   max-width: 100%;
   max-height: calc(100vh - 120px);
   object-fit: contain;
-  border-radius: 8px;
 }
-.preview-placeholder {
+.viewer-empty {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.select-area {
+.viewer-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  border: 2px dashed var(--border-soft);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.select-area:hover {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-}
-.select-icon {
-  margin-bottom: 12px;
+  gap: 14px;
   color: var(--text-3);
+  font-size: 13px;
 }
-.select-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-1);
-  margin-bottom: 4px;
+.loading-icon {
+  font-size: 36px;
+  animation: spin 1s linear infinite;
+  color: var(--el-color-primary);
 }
-.select-hint {
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.formats {
   font-size: 12px;
   color: var(--text-3);
+  margin-top: 8px;
 }
-.info-panel {
+.tip {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 8px;
+}
+.form-panel {
   width: 340px;
+  flex-shrink: 0;
   padding: 20px;
   border-left: 1px solid var(--border-soft);
   overflow-y: auto;
-  flex-shrink: 0;
 }
-.form-group {
-  margin-bottom: 16px;
-}
-.form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 6px;
-}
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.info-row {
+.form-empty {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  height: 100%;
+}
+.upload-form {
+  width: 100%;
+}
+.info-section {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.info-section :deep(.el-form-item__label) {
+  padding: 0 0 10px 0;
+  font-weight: 600;
   font-size: 13px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border-soft);
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+.info-item:hover {
+  background: var(--bg-hover);
 }
 .info-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
   color: var(--text-3);
+  width: 80px;
   flex-shrink: 0;
 }
-.info-value {
-  color: var(--text-1);
-  text-align: right;
-  word-break: break-all;
+.info-label .iconfont {
+  font-size: 12px;
 }
-.error-msg {
-  color: var(--el-color-danger);
-  font-size: 13px;
+.info-value {
+  font-size: 12px;
+  color: var(--text-1);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.error-alert {
   margin-top: 8px;
 }
 .toast {

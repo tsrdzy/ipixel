@@ -1,34 +1,39 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useStore } from './composables/useStore'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { useSettingsStore } from './stores/settings'
+import { ElMessageBox, ElMessage, ElConfigProvider } from 'element-plus'
+
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import en from 'element-plus/dist/locale/en.mjs'
+import es from 'element-plus/dist/locale/es.mjs'
+import fr from 'element-plus/dist/locale/fr.mjs'
+import de from 'element-plus/dist/locale/de.mjs'
+import ja from 'element-plus/dist/locale/ja.mjs'
+import ru from 'element-plus/dist/locale/ru.mjs'
+
+const elementPlusLocales = {
+  'zh-CN': zhCn,
+  'en-US': en,
+  'es-ES': es,
+  'fr-FR': fr,
+  'de-DE': de,
+  'ja-JP': ja,
+  'ru-RU': ru
+}
 
 const { state, checkStatus } = useStore()
+const settingsStore = useSettingsStore()
 const { locale, t } = useI18n()
 const route = useRoute()
 
-// ===== 主题切换 =====
-const isDark = ref(true)
+const elLocale = computed(() => {
+  return elementPlusLocales[locale.value] || zhCn
+})
 
-function applyTheme(dark) {
-  const root = document.documentElement
-  if (dark) root.classList.add('dark')
-  else root.classList.remove('dark')
-  isDark.value = dark
-  localStorage.setItem('imodel-theme', dark ? 'dark' : 'light')
-}
-
-function toggleTheme() {
-  applyTheme(!isDark.value)
-}
-
-function initTheme() {
-  const saved = localStorage.getItem('imodel-theme')
-  if (saved === 'light') applyTheme(false)
-  else applyTheme(true) // 默认暗色
-}
+const isDark = computed(() => settingsStore.isDark)
 
 // ===== 语言切换 =====
 const languages = [
@@ -169,6 +174,9 @@ function handleMoreCommand(command) {
     case 'update':
       checkUpdate()
       break
+    case 'settings':
+      window.location.hash = '#/settings'
+      break
     case 'about':
       showAbout()
       break
@@ -176,7 +184,7 @@ function handleMoreCommand(command) {
 }
 
 onMounted(async () => {
-  initTheme()
+  settingsStore.init()
   initLanguage()
   checkStatus()
 
@@ -199,7 +207,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <ElConfigProvider :locale="elLocale">
+    <div class="app-shell">
     <!-- 自定义标题栏 -->
     <header class="titlebar">
       <div class="titlebar-left">
@@ -214,15 +223,16 @@ onBeforeUnmount(() => {
       <div class="titlebar-right">
         <!-- 主题切换按钮 -->
         <el-button
+          v-if="settingsStore.showThemeInTitlebar"
           class="win-btn theme-btn"
           link
-          @click="toggleTheme"
+          @click="settingsStore.toggleTheme"
           :title="isDark ? t('common.theme.toggleLight') : t('common.theme.toggleDark')"
         >
           <i :class="['iconfont', isDark ? 'icon-sun' : 'icon-moon']"></i>
         </el-button>
         <!-- 语言切换下拉菜单 -->
-        <el-dropdown @command="changeLanguage">
+        <el-dropdown v-if="settingsStore.showLanguageInTitlebar" @command="changeLanguage">
           <el-button class="win-btn lang-btn" link>
             <span style="font-family: 'iconfont'; font-size: 14px;">&#xeaae;</span>
           </el-button>
@@ -264,42 +274,46 @@ onBeforeUnmount(() => {
 
     <!-- 内容区 -->
     <main class="app-content">
-      <!-- 左侧边栏 -->
-      <nav class="sidebar">
-        <div class="sidebar-nav">
-          <router-link
-            v-for="item in sidebarItems"
-            :key="item.route"
-            :to="item.route"
-            class="sidebar-item"
-            :class="{ active: route.path === item.route }"
-            :title="t(item.titleKey)"
-          >
-            <span class="iconfont sidebar-icon" v-html="item.icon"></span>
-          </router-link>
-        </div>
-        <div class="sidebar-bottom">
-          <el-dropdown trigger="click" @command="handleMoreCommand" placement="top-start">
-            <button class="sidebar-item" :title="t('menu.more')">
-              <span class="iconfont sidebar-icon">&#xeb3a;</span>
-            </button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="tutorial">{{ t('menu.tutorial') }}</el-dropdown-item>
-                <el-dropdown-item command="feedback">{{ t('menu.feedback') }}</el-dropdown-item>
-                <el-dropdown-item command="update">{{ t('menu.checkUpdate') }}</el-dropdown-item>
-                <el-dropdown-item command="about" divided>{{ t('menu.about') }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </nav>
+      <!-- 左侧边栏：仅在资源库已设置时显示 -->
+      <transition name="sidebar">
+        <nav class="sidebar" v-if="state.initialized">
+          <div class="sidebar-nav">
+            <router-link
+              v-for="item in sidebarItems"
+              :key="item.route"
+              :to="item.route"
+              class="sidebar-item"
+              :class="{ active: route.path === item.route }"
+              :title="t(item.titleKey)"
+            >
+              <span class="iconfont sidebar-icon" v-html="item.icon"></span>
+            </router-link>
+          </div>
+          <div class="sidebar-bottom">
+            <el-dropdown trigger="click" @command="handleMoreCommand" placement="top-start">
+              <button class="sidebar-item" :title="t('menu.more')">
+                <span class="iconfont sidebar-icon">&#xeb3a;</span>
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="tutorial">{{ t('menu.tutorial') }}</el-dropdown-item>
+                  <el-dropdown-item command="feedback">{{ t('menu.feedback') }}</el-dropdown-item>
+                  <el-dropdown-item command="update">{{ t('menu.checkUpdate') }}</el-dropdown-item>
+                  <el-dropdown-item command="settings">{{ t('menu.settings') }}</el-dropdown-item>
+                  <el-dropdown-item command="about" divided>{{ t('menu.about') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </nav>
+      </transition>
       <!-- 路由内容 -->
       <div class="main-content">
         <router-view />
       </div>
     </main>
   </div>
+  </ElConfigProvider>
 </template>
 
 <style scoped>
@@ -389,7 +403,6 @@ onBeforeUnmount(() => {
   height: 30px;
   padding: 0 !important;
   color: var(--text-2) !important;
-  margin-left: 4px;
 }
 .more-btn:hover {
   background: var(--bg-hover) !important;
@@ -466,7 +479,20 @@ onBeforeUnmount(() => {
 
 .main-content {
   flex: 1;
+  height: 100%;
   overflow: hidden;
   display: flex;
+}
+
+.sidebar-enter-active,
+.sidebar-leave-active {
+  transition: all 0.25s ease;
+}
+
+.sidebar-enter-from,
+.sidebar-leave-to {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
 }
 </style>

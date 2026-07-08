@@ -13,7 +13,8 @@ import {
   getImage,
   findImageByHash,
   readImageFile,
-  exportImage
+  exportImage,
+  saveSplitResult
 } from './imageStore.js'
 
 /** 注册图片相关 IPC 处理器 */
@@ -154,5 +155,12 @@ export function registerImageIpc() {
     if (result.canceled || result.filePaths.length === 0) return null
 
     return exportImage(p, image.id, result.filePaths[0])
+  })
+
+  // 保存分割结果到资源库
+  ipcMain.handle('images:save-split-result', async (_e, file) => {
+    const p = getLibraryPath()
+    if (!p) throw new Error('未设置资源库')
+    return saveSplitResult(p, file)
   })
 }

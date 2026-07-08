@@ -35,6 +35,12 @@ const routes = [
     name: 'tools',
     component: () => import('../views/ToolView.vue'),
     meta: { icon: '&#xeb64;', title: 'sidebar.tools' }
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('../views/SettingsView.vue'),
+    meta: { icon: '&#xe704;', title: 'menu.settings' }
   }
 ]
 

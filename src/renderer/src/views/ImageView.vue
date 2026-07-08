@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, defineComponent, watchEffect, h } from 'vue'
+import { ref, computed, onMounted, defineComponent, watchEffect, h, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -7,7 +7,7 @@ import { useStore } from '../composables/useStore'
 import { useImageState } from '../composables/useImageState'
 
 const router = useRouter()
-const { state, switchLibrary, renameLibrary } = useStore()
+const { state, switchLibrary, renameLibrary, saveSettings } = useStore()
 const { setPendingUpload, setEditingImage } = useImageState()
 const { t } = useI18n()
 
@@ -21,6 +21,30 @@ const selectedColors = ref([])
 const selectedFormats = ref([])
 const selectedIds = ref([])
 const isMultiSelect = ref(false)
+const previewSize = ref(state.library?.settings?.imagePreviewSize || 5)
+const gridMinWidth = computed(() => 100 + (previewSize.value - 1) * 30) // 100px ~ 370px
+const displaySettings = reactive(state.library?.settings?.imageDisplay || { name: true, tags: true, dimensions: true, fileSize: true, uploadTime: true, fileType: true, colors: true })
+
+function onPreviewSizeChange() {
+  saveSettings({ imagePreviewSize: previewSize.value })
+}
+function onDisplayChange() {
+  saveSettings({ imageDisplay: { ...displaySettings } })
+}
+const allFieldsSelected = computed({
+  get() {
+    return Object.values(displaySettings).every(v => v)
+  },
+  set(val) {
+    Object.keys(displaySettings).forEach(key => {
+      displaySettings[key] = val
+    })
+    onDisplayChange()
+  }
+})
+function onSelectAll(val) {
+  allFieldsSelected.value = val
+}
 const anchorId = ref(null)
 const loading = ref(false)
 
@@ -58,9 +82,15 @@ const ImageThumb = defineComponent({
         src.value = ''
       }
     })
-    return () => src.value
-      ? h('img', { src: src.value, class: 'thumb-img', draggable: false })
-      : h('div', { class: 'thumb-placeholder' }, '—')
+    return () => {
+      if (!src.value) return h('div', { class: 'thumb-placeholder' }, '—')
+      const isPixelArt = props.image.width < 512 || props.image.height < 512
+      return h('img', {
+        src: src.value,
+        class: ['thumb-img', { 'thumb-img-pixel': isPixelArt }],
+        draggable: false
+      })
+    }
   }
 })
 
@@ -545,6 +575,37 @@ onMounted(() => {
         </el-input>
       </div>
       <div class="topbar-right">
+        <el-popover trigger="click" placement="bottom" :width="240">
+          <template #reference>
+            <el-button type="primary" :title="t('common.previewSize')">
+              <i class="iconfont">&#xeb56;</i>
+            </el-button>
+          </template>
+          <div style="padding: 8px 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 13px; color: var(--text-2);">{{ t('common.previewSize') }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: var(--el-color-primary);">{{ previewSize }}</span>
+            </div>
+            <el-slider v-model="previewSize" :min="1" :max="10" :step="1" @change="onPreviewSizeChange" />
+          </div>
+        </el-popover>
+        <el-popover trigger="click" placement="bottom" :width="200">
+          <template #reference>
+            <el-button type="primary" :title="t('common.displayFields')">
+              <i class="iconfont">&#xeb14;</i>
+            </el-button>
+          </template>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 4px;">
+            <el-checkbox v-model="allFieldsSelected" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.name" @change="onDisplayChange">{{ t('common.name') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.tags" @change="onDisplayChange">{{ t('common.tags') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.dimensions" @change="onDisplayChange">{{ t('common.dimensions') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileSize" @change="onDisplayChange">{{ t('common.fileSize') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.uploadTime" @change="onDisplayChange">{{ t('common.uploadTime') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.fileType" @change="onDisplayChange">{{ t('common.format') }}</el-checkbox>
+            <el-checkbox v-model="displaySettings.colors" @change="onDisplayChange">{{ t('image.dominantColor') }}</el-checkbox>
+          </div>
+        </el-popover>
         <el-dropdown trigger="click" popper-class="sort-popper" @command="handleSortCommand">
           <el-button type="primary">
             <i class="iconfont icon-sort"></i>
@@ -649,17 +710,17 @@ onMounted(() => {
           @click="handleSelect(img, $event)"
           @dblclick="handleDblClick(img)"
         >
-          <span class="file-type-badge">{{ (img.fileType || '').toUpperCase() }}</span>
+          <span v-if="displaySettings.fileType" class="file-type-badge">{{ (img.fileType || '').toUpperCase() }}</span>
           <div class="image-thumb">
             <ImageThumb :image="img" />
           </div>
-          <div class="image-info">
-            <div class="image-name" :title="img.name || img.fileName">{{ img.name || img.fileName }}</div>
-            <div class="image-meta">
-              <span>{{ img.width }}×{{ img.height }}</span>
-              <span>{{ formatSize(img.fileSize) }}</span>
+          <div v-if="displaySettings.name || displaySettings.dimensions || displaySettings.fileSize || displaySettings.colors" class="image-info">
+            <div v-if="displaySettings.name" class="image-name" :title="img.name || img.fileName">{{ img.name || img.fileName }}</div>
+            <div v-if="displaySettings.dimensions || displaySettings.fileSize" class="image-meta">
+              <span v-if="displaySettings.dimensions">{{ img.width }}×{{ img.height }}</span>
+              <span v-if="displaySettings.fileSize">{{ formatSize(img.fileSize) }}</span>
             </div>
-            <div class="image-colors">
+            <div v-if="displaySettings.colors" class="image-colors">
               <span class="color-dot" :style="{ background: COLOR_HEX[img.dominantColor] || '#ccc' }" :title="img.dominantColor"></span>
               <span class="color-dot" :style="{ background: COLOR_HEX[img.secondaryColor] || '#ccc' }" :title="img.secondaryColor"></span>
             </div>
@@ -780,7 +841,7 @@ onMounted(() => {
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(v-bind(gridMinWidth + 'px'), 1fr));
   gap: 16px;
 }
 
@@ -825,6 +886,9 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.image-thumb :deep(.thumb-img-pixel) {
+  image-rendering: pixelated;
 }
 .image-thumb :deep(.thumb-placeholder) {
   color: var(--text-3);

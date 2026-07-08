@@ -148,6 +148,17 @@ export function registerIpc() {
     return { libraryPath: folderPath, library, libraries: getLibraries() }
   })
 
+  // 更新资源库设置（previewSize 等）
+  ipcMain.handle('library:updateSettings', async (_e, settings) => {
+    const p = getLibraryPath()
+    if (!p) throw new Error('未打开资源库')
+    const library = await loadLibrary(p)
+    if (!library) throw new Error('资源库不存在')
+    library.settings = { ...(library.settings || {}), ...settings }
+    await saveLibrary(p, library)
+    return library
+  })
+
   // ====== 标签 ======
 
   ipcMain.handle('tags:list', async () => {

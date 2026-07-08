@@ -291,3 +291,43 @@ export async function exportImage(folderPath, id, targetDir) {
   await fsp.copyFile(join(dir, image.fileName), targetPath)
   return { targetDir, fileName: `${safeName}.${ext}` }
 }
+
+/** 保存分割后的图片结果 */
+export async function saveSplitResult(folderPath, file) {
+  const buffer = Buffer.from(file.base64, 'base64')
+  const hash = createHash('sha256')
+  hash.update(buffer)
+  const id = hash.digest('hex')
+
+  // 如果已存在相同内容的图片，跳过
+  if (getImage(id)) {
+    return { skipped: true, id }
+  }
+
+  const dir = imageDir(folderPath, id)
+  await fsp.mkdir(dir, { recursive: true })
+
+  const fileName = file.name
+  const destPath = join(dir, fileName)
+  await fsp.writeFile(destPath, buffer)
+  const stat = await fsp.stat(destPath)
+
+  const info = await analyzeImage(destPath)
+
+  const meta = {
+    id,
+    name: '',
+    fileName,
+    fileType: 'png',
+    fileSize: stat.size,
+    width: info.width,
+    height: info.height,
+    dominantColor: info.dominantColor,
+    secondaryColor: info.secondaryColor,
+    uploadTime: new Date().toISOString(),
+    tags: []
+  }
+
+  commitImage(meta)
+  return meta
+}

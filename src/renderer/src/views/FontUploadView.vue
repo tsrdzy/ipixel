@@ -9,6 +9,7 @@ const { t } = useI18n()
 const { state: fontState, reset, setPendingUpload } = useFontState()
 
 const name = ref('')
+const description = ref('')
 const tags = ref([])
 const saving = ref(false)
 const saved = ref(false)
@@ -98,6 +99,7 @@ async function handleSave() {
     const meta = {
       id: String(fontId.value),
       name: String(name.value.trim()),
+      description: String(description.value.trim()),
       fileName: String(fileInfo.value.fileName),
       fileType: String(fileInfo.value.fileType.toLowerCase()),
       fileSize: Number(fileInfo.value.fileSize),
@@ -194,6 +196,7 @@ watch(hasFile, () => {
 onMounted(() => {
   if (isEdit.value && currentFont.value) {
     name.value = currentFont.value.name || ''
+    description.value = currentFont.value.description || ''
     tags.value = currentFont.value.tags ? [...currentFont.value.tags] : []
   } else if (uploadData.value?.meta) {
     name.value = uploadData.value.meta.fileName
@@ -205,100 +208,125 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="upload-view">
+  <div class="upload">
     <header class="topbar">
-      <div class="topbar-left">
-        <el-button text @click="handleBack">
-          <i class="iconfont icon-arrow-left"></i> {{ t('common.back') }}
+      <el-button text @click="handleBack"><i class="iconfont icon-chevron-left"></i> {{ t('common.back') }}</el-button>
+      <span class="title">{{ isEdit ? t('font.detail') : t('common.upload') }}</span>
+      <div class="topbar-actions">
+        <el-button v-if="isEdit" :loading="exporting" @click="handleExport" :title="t('common.export')">
+          <i class="iconfont icon-cloud-download"></i>
+          {{ exporting ? t('common.exporting') : t('common.export') }}
         </el-button>
-      </div>
-      <div class="topbar-right">
-        <el-button v-if="isEdit" :loading="exporting" @click="handleExport">
-          <i class="iconfont icon-download"></i> {{ t('common.export') }}
-        </el-button>
-        <el-button v-if="isEdit" type="danger" @click="handleDelete">
-          <i class="iconfont icon-trash-alt"></i> {{ t('common.delete') }}
+        <el-button v-if="isEdit" type="danger" plain @click="handleDelete">
+          <i class="iconfont icon-trash-alt"></i>
+          {{ t('common.delete') }}
         </el-button>
         <el-button type="primary" :loading="saving" @click="handleSave">
-          <i class="iconfont icon-save"></i> {{ t('common.save') }}
+          {{ saving ? t('common.saving') : t('common.save') }}
         </el-button>
       </div>
     </header>
 
-    <main class="main">
-      <div class="preview-panel">
-        <div v-if="hasFile" class="preview-wrapper">
-          <div class="font-preview">
-            <div class="preview-text-top" :style="{ fontFamily: fontPreviewUrl ? fileInfo.fontFamily : 'inherit', fontWeight: fileInfo.fontWeight, fontStyle: fileInfo.fontStyle }">
-              {{ t('font.sampleTextTop') }}
-            </div>
-            <div class="preview-text-bottom" :style="{ fontFamily: fontPreviewUrl ? fileInfo.fontFamily : 'inherit', fontWeight: fileInfo.fontWeight, fontStyle: fileInfo.fontStyle }">
-              iPixel
+    <div class="body">
+      <div class="viewer-panel">
+        <div class="viewer-container">
+          <div v-if="hasFile" class="preview-wrapper">
+            <div class="font-preview">
+              <div class="preview-text-top" :style="{ fontFamily: fontPreviewUrl ? fileInfo.fontFamily : 'inherit', fontWeight: fileInfo.fontWeight, fontStyle: fileInfo.fontStyle }">
+                {{ t('font.sampleTextTop') }}
+              </div>
+              <div class="preview-text-bottom" :style="{ fontFamily: fontPreviewUrl ? fileInfo.fontFamily : 'inherit', fontWeight: fileInfo.fontWeight, fontStyle: fileInfo.fontStyle }">
+                iPixel
+              </div>
             </div>
           </div>
-        </div>
-        <div v-else class="select-area" @click="selectFile">
-          <div class="select-icon">
-            <span class="iconfont" style="font-size: 48px;">&#xeb1a;</span>
+          <div v-else class="viewer-empty" @click="selectFile">
+            <el-empty :description="t('common.upload')">
+              <p class="formats">支持 TTF / OTF / WOFF / WOFF2 等格式</p>
+            </el-empty>
           </div>
-          <div class="select-text">{{ t('common.upload') }}</div>
-          <div class="select-hint">支持 TTF / OTF / WOFF / WOFF2 等格式</div>
         </div>
+        <p class="tip">{{ t('font.detail') }}</p>
       </div>
 
-      <div class="info-panel">
-        <div class="form-group">
-          <label>{{ t('common.name') }}</label>
-          <el-input v-model="name" :placeholder="t('font.namePlaceholder')" maxlength="100" show-word-limit />
+      <div class="form-panel">
+        <div v-if="!hasFile" class="form-empty">
+          <el-button type="primary" size="large" @click="selectFile">
+            {{ t('common.upload') }}
+          </el-button>
         </div>
 
-        <div class="form-group">
-          <label>{{ t('common.tags') }}</label>
-          <TagInput v-model="tags" />
-        </div>
+        <template v-else>
+          <el-form label-position="top" class="upload-form">
+            <el-form-item :label="t('common.name')" required>
+              <el-input v-model="name" :placeholder="t('font.namePlaceholder')" />
+            </el-form-item>
 
-        <div class="form-group">
-          <label>{{ t('font.fileInfo') }}</label>
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-label">{{ t('upload.fileName') }}</span>
-              <span class="info-value">{{ fileInfo.fileName }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.format') }}</span>
-              <span class="info-value">{{ fileInfo.fileType }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.fileSize') }}</span>
-              <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('font.fontFamily') }}</span>
-              <span class="info-value">{{ fileInfo.fontFamily }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('font.fontWeight') }}</span>
-              <span class="info-value">{{ fileInfo.fontWeight }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('font.fontStyle') }}</span>
-              <span class="info-value">{{ fileInfo.fontStyle }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ t('common.uploadTime') }}</span>
-              <span class="info-value">{{ formatTime(fileInfo.uploadTime) }}</span>
-            </div>
-          </div>
-        </div>
+            <el-form-item :label="t('upload.description')">
+              <el-input
+                v-model="description"
+                type="textarea"
+                :rows="3"
+                :placeholder="t('upload.descriptionPlaceholder')"
+              />
+            </el-form-item>
 
-        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+            <el-form-item :label="t('common.tags')">
+              <TagInput v-model="tags" />
+            </el-form-item>
+
+            <el-form-item class="info-section">
+              <template #label>{{ t('font.fileInfo') }}</template>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-file"></i> {{ t('upload.fileName') }}</span>
+                  <span class="info-value">{{ fileInfo.fileName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-tag"></i> {{ t('common.format') }}</span>
+                  <span class="info-value">{{ fileInfo.fileType }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-cloud-download"></i> {{ t('common.fileSize') }}</span>
+                  <span class="info-value">{{ formatSize(fileInfo.fileSize) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-font"></i> {{ t('font.fontFamily') }}</span>
+                  <span class="info-value">{{ fileInfo.fontFamily }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-font"></i> {{ t('font.fontWeight') }}</span>
+                  <span class="info-value">{{ fileInfo.fontWeight }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-font"></i> {{ t('font.fontStyle') }}</span>
+                  <span class="info-value">{{ fileInfo.fontStyle }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label"><i class="iconfont icon-clock"></i> {{ t('common.uploadTime') }}</span>
+                  <span class="info-value">{{ formatTime(fileInfo.uploadTime) }}</span>
+                </div>
+              </div>
+            </el-form-item>
+          </el-form>
+
+          <el-alert
+            v-if="errorMsg"
+            :title="errorMsg"
+            type="error"
+            show-icon
+            :closable="false"
+            class="error-alert"
+          />
+        </template>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.upload-view {
+.upload {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -307,37 +335,44 @@ onMounted(() => {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
+  gap: 12px;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
-.topbar-left {
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+.topbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.main {
+.body {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
-.preview-panel {
+.viewer-panel {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+}
+.viewer-container {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  overflow: hidden;
 }
 .preview-wrapper {
-  max-width: 100%;
-  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,87 +388,95 @@ onMounted(() => {
   min-width: 300px;
 }
 .preview-text-top {
-  font-size: 24px;
+  font-size: 28px;
   color: var(--text-1);
   margin-bottom: 12px;
 }
 .preview-text-bottom {
-  font-size: 32px;
+  font-size: 40px;
   color: var(--text-2);
   font-weight: 700;
 }
-.select-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.viewer-empty {
   width: 100%;
   height: 100%;
-  border: 2px dashed var(--border-soft);
-  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.select-area:hover {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-}
-.select-icon {
-  margin-bottom: 12px;
-  color: var(--text-3);
-}
-.select-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-1);
-  margin-bottom: 4px;
-}
-.select-hint {
+.formats {
   font-size: 12px;
   color: var(--text-3);
+  margin-top: 8px;
 }
-.info-panel {
+.tip {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 8px;
+}
+.form-panel {
   width: 340px;
+  flex-shrink: 0;
   padding: 20px;
   border-left: 1px solid var(--border-soft);
   overflow-y: auto;
-  flex-shrink: 0;
 }
-.form-group {
-  margin-bottom: 16px;
-}
-.form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 6px;
-}
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.info-row {
+.form-empty {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  height: 100%;
+}
+.upload-form {
+  width: 100%;
+}
+.info-section {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.info-section :deep(.el-form-item__label) {
+  padding: 0 0 10px 0;
+  font-weight: 600;
   font-size: 13px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border-soft);
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+.info-item:hover {
+  background: var(--bg-hover);
 }
 .info-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
   color: var(--text-3);
+  width: 80px;
   flex-shrink: 0;
 }
-.info-value {
-  color: var(--text-1);
-  text-align: right;
-  word-break: break-all;
+.info-label .iconfont {
+  font-size: 12px;
 }
-.error-msg {
-  color: var(--el-color-danger);
-  font-size: 13px;
+.info-value {
+  font-size: 12px;
+  color: var(--text-1);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.error-alert {
   margin-top: 8px;
 }
 </style>

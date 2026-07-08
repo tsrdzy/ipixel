@@ -112,6 +112,13 @@ async function renameLibrary(newName) {
   state.libraries = res.libraries || []
 }
 
+/** 保存资源库设置（持久化到 library.json） */
+async function saveSettings(settings) {
+  if (!state.libraryPath) return
+  const library = await window.api.library.updateSettings(settings)
+  state.library = library
+}
+
 /** 进入上传页 */
 function goUpload() {
   state.editingModel = null
@@ -173,6 +180,7 @@ export function useStore() {
     removeLibrary,
     switchLibrary,
     renameLibrary,
+    saveSettings,
     goUpload,
     goEdit,
     goHome,

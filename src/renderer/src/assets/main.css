@@ -70,6 +70,18 @@
   line-height: 1.5;
 }
 
+.topbar-right :deep(.el-popover),
+.topbar-right :deep(.el-dropdown),
+.topbar-right :deep(.el-popover__reference-wrapper) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.topbar-right :deep(.el-button) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* ====== 标签芯片 ====== */
 .chip {
   display: inline-flex;
