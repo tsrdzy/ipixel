@@ -5,6 +5,17 @@ export const useSettingsStore = defineStore('settings', () => {
   const isDark = ref(true)
   const showThemeInTitlebar = ref(true)
   const showLanguageInTitlebar = ref(true)
+  const deviceInfo = ref(null)
+
+  async function loadDeviceInfo() {
+    try {
+      const info = await window.api.logs.getDeviceInfo()
+      deviceInfo.value = info
+      localStorage.setItem('imodel-deviceInfo', JSON.stringify(info))
+    } catch (e) {
+      console.error('加载设备信息失败:', e)
+    }
+  }
 
   function init() {
     const savedTheme = localStorage.getItem('imodel-theme')
@@ -16,6 +27,15 @@ export const useSettingsStore = defineStore('settings', () => {
 
     const savedLangTitlebar = localStorage.getItem('imodel-showLanguageInTitlebar')
     if (savedLangTitlebar !== null) showLanguageInTitlebar.value = savedLangTitlebar === 'true'
+
+    const savedDeviceInfo = localStorage.getItem('imodel-deviceInfo')
+    if (savedDeviceInfo) {
+      try {
+        deviceInfo.value = JSON.parse(savedDeviceInfo)
+      } catch {
+        deviceInfo.value = null
+      }
+    }
 
     applyTheme()
   }
@@ -42,17 +62,15 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('imodel-showLanguageInTitlebar', val ? 'true' : 'false')
   }
 
-  watch(isDark, () => {
-    applyTheme()
-  })
-
   return {
     isDark,
     showThemeInTitlebar,
     showLanguageInTitlebar,
+    deviceInfo,
     init,
     toggleTheme,
     setShowThemeInTitlebar,
-    setShowLanguageInTitlebar
+    setShowLanguageInTitlebar,
+    loadDeviceInfo
   }
 })

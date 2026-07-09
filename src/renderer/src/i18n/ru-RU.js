@@ -112,7 +112,8 @@ export default {
     theme: 'Тема',
     dark: 'Темная',
     light: 'Светлая',
-    showInTitlebar: 'Показать в заголовке'
+    showInTitlebar: 'Показать в заголовке',
+    version: 'Версия'
   },
   init: {
     title: 'Управление библиотекой',

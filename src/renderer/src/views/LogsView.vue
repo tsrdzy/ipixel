@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSettingsStore } from '../stores/settings'
 import {
   ElTable,
   ElTableColumn,
@@ -14,6 +15,7 @@ import {
 } from 'element-plus'
 
 const { t } = useI18n()
+const settingsStore = useSettingsStore()
 
 const logs = ref([])
 const total = ref(0)
@@ -23,6 +25,7 @@ const pageSize = ref(50)
 const filterType = ref('')
 const filterModule = ref('')
 const filterStatus = ref('')
+const deviceLoading = ref(false)
 
 const operationTypes = {
   'create': '创建',
@@ -126,7 +129,37 @@ function formatTime(isoString) {
 function formatDetail(detail) {
   if (!detail) return ''
   if (typeof detail === 'string') return detail
+  return JSON.stringify(detail)
+}
+
+function formatDetailFull(detail) {
+  if (!detail) return ''
+  if (typeof detail === 'string') return detail
   return JSON.stringify(detail, null, 2)
+}
+
+async function showDetail(row) {
+  await ElMessageBox.alert(
+    `<pre style="white-space: pre-wrap; max-height: 400px; overflow-y: auto; font-size: 12px;">${formatDetailFull(row.detail)}</pre>`,
+    '操作详情',
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: t('common.close'),
+      customClass: 'detail-dialog',
+      width: '600px'
+    }
+  )
+}
+
+async function loadDeviceInfo() {
+  deviceLoading.value = true
+  try {
+    await settingsStore.loadDeviceInfo()
+  } catch (e) {
+    console.error('加载设备信息失败:', e)
+  } finally {
+    deviceLoading.value = false
+  }
 }
 
 watch([filterType, filterModule, filterStatus], () => {
@@ -134,7 +167,12 @@ watch([filterType, filterModule, filterStatus], () => {
   loadLogs()
 })
 
-onMounted(loadLogs)
+onMounted(() => {
+  loadLogs()
+  if (!settingsStore.deviceInfo) {
+    loadDeviceInfo()
+  }
+})
 </script>
 
 <template>
@@ -143,6 +181,35 @@ onMounted(loadLogs)
       <h2>{{ t('menu.operationLogs') || '操作日志' }}</h2>
     </div>
     <div class="logs-content">
+      <div v-if="settingsStore.deviceInfo" class="device-info-card">
+        <div class="device-info-header">
+          <span class="device-info-title">电脑信息</span>
+          <ElButton size="small" @click="loadDeviceInfo" :loading="deviceLoading">刷新</ElButton>
+        </div>
+        <div class="device-info-content">
+          <div class="device-info-item">
+            <span class="device-info-label">CPU:</span>
+            <span>{{ (settingsStore.deviceInfo.cpu?.brand || settingsStore.deviceInfo.cpu?.manufacturer || '-') + (settingsStore.deviceInfo.cpu?.speed ? ' ' + settingsStore.deviceInfo.cpu.speed : '') }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">内存:</span>
+            <span>{{ settingsStore.deviceInfo.memory ? (settingsStore.deviceInfo.memory.total / 1024 / 1024 / 1024).toFixed(2) + ' GB' : '-' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">系统:</span>
+            <span>{{ settingsStore.deviceInfo.os?.distro || settingsStore.deviceInfo.os?.platform || '-' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">版本:</span>
+            <span>{{ settingsStore.deviceInfo.os?.release || '-' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">主机名:</span>
+            <span>{{ settingsStore.deviceInfo.os?.hostname || '-' }}</span>
+          </div>
+        </div>
+      </div>
+
       <div class="logs-filter">
         <ElSelect
           v-model="filterType"
@@ -198,7 +265,7 @@ onMounted(loadLogs)
         </ElTableColumn>
         <ElTableColumn prop="detail" label="详情" min-width="300">
           <template #default="{ row }">
-            <pre class="detail-pre">{{ formatDetail(row.detail) }}</pre>
+            <span class="detail-text" @dblclick="showDetail(row)" title="双击查看详情">{{ formatDetail(row.detail) }}</span>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="status" label="状态" width="80">
@@ -253,16 +320,59 @@ onMounted(loadLogs)
   gap: 8px;
 }
 
-.detail-pre {
+.device-info-card {
+  background: var(--bg-soft);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-soft);
+}
+
+.device-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.device-info-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.device-info-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.device-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.device-info-label {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.detail-text {
   font-family: monospace;
   font-size: 12px;
-  white-space: pre-wrap;
-  word-break: break-all;
-  margin: 0;
-  padding: 4px;
-  background: var(--bg-soft);
-  border-radius: 4px;
-  max-height: 100px;
-  overflow-y: auto;
+  color: var(--text-2);
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.detail-text:hover {
+  color: var(--text-1);
+  text-decoration: underline;
 }
 </style>

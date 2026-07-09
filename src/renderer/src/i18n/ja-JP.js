@@ -112,7 +112,8 @@ export default {
     theme: 'テーマ',
     dark: 'ダーク',
     light: 'ライト',
-    showInTitlebar: 'タイトルバーに表示'
+    showInTitlebar: 'タイトルバーに表示',
+    version: 'バージョン'
   },
   init: {
     title: 'ライブラリ管理',

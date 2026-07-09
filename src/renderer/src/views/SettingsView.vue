@@ -64,6 +64,7 @@ const currentTheme = computed({
   get() { return settingsStore.isDark ? 'dark' : 'light' },
   set(val) {
     settingsStore.isDark = val === 'dark'
+    localStorage.setItem('imodel-theme', val)
     settingsStore.applyTheme()
   }
 })
@@ -84,9 +85,14 @@ function changeLanguage(lang) {
         <template #header>
           <span>{{ t('settings.general') }}</span>
         </template>
-        <div class="settings-section version-section">
-          <span class="version-text">{{ version }}</span>
-          <el-button type="primary" size="small" @click="checkUpdate">检查更新</el-button>
+        <div class="settings-section">
+          <div class="setting-item">
+            <span class="setting-label">{{ t('settings.version') }}</span>
+            <span class="setting-value">v{{ version }}</span>
+          </div>
+          <div style="text-align: right; margin-top: 8px;">
+            <el-button type="primary" size="small" @click="checkUpdate">{{ t('menu.checkUpdate') }}</el-button>
+          </div>
         </div>
       </el-card>
 
@@ -106,7 +112,7 @@ function changeLanguage(lang) {
         <div class="settings-section">
           <div class="setting-item">
             <span class="setting-label">{{ t('settings.theme') }}</span>
-            <el-select v-model="currentTheme" style="width: 100%" @change="(val) => { settingsStore.isDark = val === 'dark'; settingsStore.applyTheme() }">
+            <el-select v-model="currentTheme" style="width: 100%">
               <el-option v-for="theme in themes" :key="theme.value" :label="theme.label" :value="theme.value" />
             </el-select>
           </div>
@@ -185,6 +191,11 @@ function changeLanguage(lang) {
   width: 80px;
 }
 
+.setting-value {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -192,15 +203,5 @@ function changeLanguage(lang) {
   width: 100%;
 }
 
-.version-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
-.version-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-1);
-}
 </style>

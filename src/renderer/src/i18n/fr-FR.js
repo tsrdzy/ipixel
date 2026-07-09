@@ -112,7 +112,8 @@ export default {
     theme: 'Thème',
     dark: 'Sombre',
     light: 'Clair',
-    showInTitlebar: 'Afficher dans la barre de titre'
+    showInTitlebar: 'Afficher dans la barre de titre',
+    version: 'Version'
   },
   init: {
     title: 'Gestion de bibliothèque',

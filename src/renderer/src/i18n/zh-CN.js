@@ -112,7 +112,8 @@ export default {
     theme: '主题',
     dark: '暗色',
     light: '亮色',
-    showInTitlebar: '在顶部显示'
+    showInTitlebar: '在顶部显示',
+    version: '版本'
   },
   init: {
     title: '资源库管理',

@@ -112,7 +112,8 @@ export default {
     theme: 'Theme',
     dark: 'Dark',
     light: 'Light',
-    showInTitlebar: 'Show in Titlebar'
+    showInTitlebar: 'Show in Titlebar',
+    version: 'Version'
   },
   init: {
     title: 'Library Management',

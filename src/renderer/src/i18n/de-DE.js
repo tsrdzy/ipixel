@@ -112,7 +112,8 @@ export default {
     theme: 'Design',
     dark: 'Dunkel',
     light: 'Hell',
-    showInTitlebar: 'In der Titelleiste anzeigen'
+    showInTitlebar: 'In der Titelleiste anzeigen',
+    version: 'Version'
   },
   init: {
     title: 'Bibliothekverwaltung',

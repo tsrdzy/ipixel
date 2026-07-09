@@ -7,7 +7,7 @@ import { registerImageIpc } from './lib/imageIpc.js'
 import { registerAudioIpc } from './lib/audioIpc.js'
 import { registerFontIpc } from './lib/fontIpc.js'
 import { closeDB } from './lib/db.js'
-import { initDeviceInfo, logLibraryClose, logOperation } from './lib/logger.js'
+import { initDeviceInfo, logLibraryClose } from './lib/logger.js'
 
 /** 主窗口引用，供窗口控制 IPC 使用 */
 let mainWindowRef = null

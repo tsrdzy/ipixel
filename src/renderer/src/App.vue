@@ -189,6 +189,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+
   <ElConfigProvider :locale="elLocale">
     <div class="app-shell">
     <!-- 自定义标题栏 -->
