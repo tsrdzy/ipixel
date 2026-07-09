@@ -2,75 +2,19 @@
 
 基于 Electron + Vue 3 开发的本地资源管理工具，帮助设计师和开发者高效管理本地3D模型、图片、音频和字体资源。
 
-## 功能
+## 功能对比
 
-### 资源库管理
-- 创建新资源库（选择空文件夹）
-- 打开已有资源库
-- 资源库列表记录与快速切换
-- 资源库重命名
-
-### 模型管理
-- 3D模型实时预览（Three.js）
-- 模型动画播放与控制
-- 自定义封面生成
-- 辅助文件管理（材质 .mtl、贴图 .png、动画、.bin）
-- 模型信息查看（文件名、格式、大小、尺寸、上传时间）
-- 单个上传（支持编辑模型详情：名称、简介、标签）
-- 批量上传（自动生成封面）
-- 重复模型检测与覆盖确认
-
-### 图片库
-- 图片实时预览
-- 图片信息查看（文件名、格式、大小、尺寸、上传时间、主色调）
-- 单个上传与批量上传
-- 图片分割处理
-
-### 音频库
-- 音频波形可视化（Wavesurfer.js）
-- 音频播放控制（播放、暂停、进度条）
-- 音频信息查看（文件名、格式、大小、时长、采样率、比特率）
-
-### 字体库
-- 字体预览（实时显示字体效果）
-- 字体信息查看（文件名、格式、大小、字重、样式）
-
-### 搜索与筛选
-- 关键词搜索（名称、简介、标签）
-- 标签筛选（多选，OR关系）
-- 格式筛选
-- 多种排序方式（上传时间、文件大小、名称、模型尺寸）
-
-### 设置
-- 版本信息显示
-- 深色/浅色主题切换（自动记忆）
-- 多语言支持（中文、英文、西班牙文、法文、德文、日文、俄文）
-
-## 支持的储存类型
-
-### 模型格式
-- GLB（glTF Binary）
-- GLTF（glTF JSON）
-- OBJ（Wavefront Object）
-- STL（Stereolithography）
-- JSON（Three.js JSON）
-- FBX（Autodesk FBX）
-
-### 图片格式
-- PNG、JPG、JPEG、BMP、WebP、GIF、TGA
-
-### 音频格式
-- MP3、WAV、OGG、FLAC、M4A
-
-### 字体格式
-- TTF、OTF、WOFF、WOFF2
+| | 模型资源库 | 图片资源库 | 音频资源库 | 字体资源库 |
+|---|---|---|---|---|
+| 功能 | 单个上传、批量上传、重复检测、拖拽旋转视角、自定义封面、辅助文件管理 | 单个上传、批量上传、颜色筛选、图片分割 | 单个上传、批量上传、波形播放、音量控制、倍速播放、循环播放 | 单个上传、批量上传、字体预览 |
+| 支持格式 | GLB、GLTF、OBJ、STL、JSON、FBX | PNG、JPG、JPEG、BMP、WebP、GIF、TGA | MP3、WAV、OGG、FLAC、M4A | TTF、OTF、WOFF、WOFF2 |
 
 ## 工具
 
-- 模型3D预览与交互（拖拽旋转、滚轮缩放、右键平移）
-- 图片分割工具
-- 音频波形可视化
-- 字体实时预览
+| 工具名称 | 描述 |
+|---|---|
+| 图片分割工具 | 自动或手动分割精灵图，支持背景色过滤、无用区域过滤 |
+| 图片合并工具 | 支持水平、垂直、网格三种合并模式，可自定义间距和背景色 |
 
 ## 数据储存方式
 
@@ -80,6 +24,52 @@
 - 文件存储：按 SHA256 哈希值分片存储在 models/XX/ 和 images/XX/ 目录下（XX 为哈希前两位，00-ff）
 - 资源ID：使用文件 SHA256 哈希值确保唯一性
 - 资源库配置：library.json 存储资源库基本信息
+
+## 项目目录
+
+```
+ipixel/
+├── src/
+│   ├── main/                      # 主进程代码
+│   │   ├── index.js               # 主进程入口
+│   │   ├── lib/                   # 主进程模块
+│   │   │   ├── db.js              # 数据库操作
+│   │   │   ├── store.js           # 模型资源存储
+│   │   │   ├── imageStore.js      # 图片资源存储
+│   │   │   ├── imageIpc.js        # 图片IPC通信
+│   │   │   ├── audioIpc.js        # 音频IPC通信
+│   │   │   ├── fontIpc.js         # 字体IPC通信
+│   │   │   └── ipc.js             # 通用IPC通信
+│   │   └── preload/               # 预加载脚本
+│   └── renderer/                  # 渲染进程代码
+│       ├── src/
+│       │   ├── assets/            # 静态资源
+│       │   ├── components/        # 公共组件
+│       │   │   ├── ModelCard.vue  # 模型卡片
+│       │   │   ├── ModelViewer.vue# 3D模型预览
+│       │   │   └── TagInput.vue   # 标签输入
+│       │   ├── composables/       # 组合式函数
+│       │   ├── i18n/              # 国际化配置
+│       │   ├── iconfont/          # 图标字体
+│       │   ├── router/            # 路由配置
+│       │   ├── stores/            # Pinia状态管理
+│       │   ├── views/             # 页面视图
+│       │   │   ├── tools/         # 工具页面
+│       │   │   │   ├── ImageSplitTool.vue
+│       │   │   │   └── ImageMergeTool.vue
+│       │   │   ├── ModelLayout.vue
+│       │   │   ├── ImageLayout.vue
+│       │   │   ├── AudioLayout.vue
+│       │   │   ├── FontLayout.vue
+│       │   │   ├── SettingsView.vue
+│       │   │   └── ToolView.vue
+│       │   ├── App.vue            # 根组件
+│       │   └── main.js            # 渲染进程入口
+│       └── index.html             # HTML模板
+├── resources/                     # 应用资源
+├── package.json                   # 项目配置
+└── vite.config.js                 # Vite配置
+```
 
 ## 系统要求
 

@@ -714,8 +714,19 @@ onMounted(() => {
           <div class="image-thumb">
             <ImageThumb :image="img" />
           </div>
-          <div v-if="displaySettings.name || displaySettings.dimensions || displaySettings.fileSize || displaySettings.colors" class="image-info">
+          <div v-if="displaySettings.name || displaySettings.tags || displaySettings.dimensions || displaySettings.fileSize || displaySettings.colors" class="image-info">
             <div v-if="displaySettings.name" class="image-name" :title="img.name || img.fileName">{{ img.name || img.fileName }}</div>
+            <div v-if="displaySettings.tags && img.tags && img.tags.length" class="image-tags">
+              <el-tag
+                v-for="t in img.tags.slice(0, 4)"
+                :key="t"
+                size="small"
+              >
+                <span style="font-family: 'iconfont'; margin-right: 4px;">&#xeb2a;</span>
+                {{ t }}
+              </el-tag>
+              <span v-if="img.tags.length > 4" class="more">+{{ img.tags.length - 4 }}</span>
+            </div>
             <div v-if="displaySettings.dimensions || displaySettings.fileSize" class="image-meta">
               <span v-if="displaySettings.dimensions">{{ img.width }}×{{ img.height }}</span>
               <span v-if="displaySettings.fileSize">{{ formatSize(img.fileSize) }}</span>
@@ -903,7 +914,18 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+.image-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.more {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 1px 4px;
 }
 .image-meta {
   display: flex;

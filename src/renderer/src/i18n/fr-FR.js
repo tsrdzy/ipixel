@@ -101,6 +101,7 @@ export default {
     about: 'À propos de iModel',
     version: 'Version',
     settings: 'Paramètres',
+    operationLogs: 'Journaux d\'opération',
     aboutDesc: 'Un outil de gestion de bibliothèque de modèles 3D propre et efficace, compatible avec GLB, GLTF, OBJ, STL et plus de formats.',
     license: 'Licence : MIT License'
   },

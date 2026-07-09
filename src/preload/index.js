@@ -132,6 +132,14 @@ const api = {
       ipcRenderer.on('window:is-max', handler)
       return () => ipcRenderer.removeListener('window:is-max', handler)
     }
+  },
+
+  // ====== 操作日志 ======
+  logs: {
+    query: (options) => ipcRenderer.invoke('logs:query', options),
+    export: () => ipcRenderer.invoke('logs:export'),
+    clear: (beforeDate) => ipcRenderer.invoke('logs:clear', beforeDate),
+    getDeviceInfo: () => ipcRenderer.invoke('logs:getDeviceInfo')
   }
 }
 

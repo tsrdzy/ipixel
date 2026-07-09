@@ -86,6 +86,21 @@ function createTables() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_fonts_tags ON fonts(tags);
+
+    CREATE TABLE IF NOT EXISTS operation_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT NOT NULL,
+      operation_type TEXT NOT NULL,
+      module TEXT NOT NULL,
+      detail TEXT DEFAULT '',
+      status TEXT DEFAULT 'success',
+      error_message TEXT DEFAULT '',
+      device_info TEXT DEFAULT '{}'
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_operation_logs_timestamp ON operation_logs(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_operation_logs_type ON operation_logs(operation_type);
+    CREATE INDEX IF NOT EXISTS idx_operation_logs_module ON operation_logs(module);
   `)
 }
 

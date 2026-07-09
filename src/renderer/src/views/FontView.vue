@@ -632,8 +632,19 @@ onMounted(() => {
               iPixel
             </div>
           </div>
-          <div v-if="displaySettings.name || displaySettings.fontFamily || displaySettings.fileSize" class="font-info">
+          <div v-if="displaySettings.name || displaySettings.tags || displaySettings.fontFamily || displaySettings.fileSize" class="font-info">
             <div v-if="displaySettings.name" class="font-name" :title="font.name || font.fileName">{{ font.name || font.fileName }}</div>
+            <div v-if="displaySettings.tags && font.tags && font.tags.length" class="font-tags">
+              <el-tag
+                v-for="t in font.tags.slice(0, 4)"
+                :key="t"
+                size="small"
+              >
+                <span style="font-family: 'iconfont'; margin-right: 4px;">&#xeb2a;</span>
+                {{ t }}
+              </el-tag>
+              <span v-if="font.tags.length > 4" class="more">+{{ font.tags.length - 4 }}</span>
+            </div>
             <div v-if="displaySettings.fontFamily || displaySettings.fileSize" class="font-meta">
               <span v-if="displaySettings.fontFamily">{{ font.fontFamily }}</span>
               <span v-if="displaySettings.fileSize">{{ formatSize(font.fileSize) }}</span>
@@ -816,7 +827,18 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+.font-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.more {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 1px 4px;
 }
 .font-meta {
   display: flex;

@@ -7,6 +7,7 @@ import { registerImageIpc } from './lib/imageIpc.js'
 import { registerAudioIpc } from './lib/audioIpc.js'
 import { registerFontIpc } from './lib/fontIpc.js'
 import { closeDB } from './lib/db.js'
+import { initDeviceInfo, logLibraryClose, logOperation } from './lib/logger.js'
 
 /** 主窗口引用，供窗口控制 IPC 使用 */
 let mainWindowRef = null
@@ -70,13 +71,14 @@ function registerWindowControls() {
   ipcMain.handle('window:is-maximized', () => !!mainWindowRef?.isMaximized())
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.imodel.app')
 
-  // 设置应用图标（Windows 任务栏 / macOS Dock）
   if (icon) {
     app.setName('iModel')
   }
+
+  await initDeviceInfo()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

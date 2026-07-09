@@ -2,12 +2,54 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { t, locale } = useI18n()
 const settingsStore = useSettingsStore()
 
 import pkg from '../../../../package.json'
 const version = computed(() => pkg.version)
+
+async function checkUpdate() {
+  ElMessage.info(t('menu.checkingUpdate'))
+  try {
+    const response = await fetch('https://api.github.com/repos/tsrdzy/ipixel/releases/latest')
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    const data = await response.json()
+    console.log('[Update] GitHub API response:', JSON.stringify(data, null, 2))
+    
+    const latestVersion = (data.tag_name || '1.0.0').replace(/^v/i, '')
+    const currentVersion = version.value
+    
+    console.log('[Update] Current version:', currentVersion)
+    console.log('[Update] Latest version:', latestVersion)
+    console.log('[Update] Update URL:', data.html_url)
+    
+    if (latestVersion !== currentVersion) {
+      try {
+        await ElMessageBox.confirm(
+          t('menu.newVersion', { version: latestVersion }),
+          t('menu.updateAvailable'),
+          {
+            confirmButtonText: t('menu.download'),
+            cancelButtonText: t('common.cancel'),
+            type: 'success'
+          }
+        )
+        window.open(data.html_url, '_blank')
+      } catch {
+        // 用户取消
+      }
+    } else {
+      ElMessage.success(t('menu.latestVersion'))
+    }
+  } catch (e) {
+    console.error('[Update] Check failed:', e.message)
+    ElMessage.error(t('menu.checkUpdateFailed'))
+  }
+}
 
 const themes = [
   { value: 'dark', label: t('settings.dark') },
@@ -49,9 +91,11 @@ function changeLanguage(lang) {
           <span>{{ t('settings.general') }}</span>
         </template>
         <div class="settings-section">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="Version">{{ version }}</el-descriptions-item>
-          </el-descriptions>
+          <div class="version-info">
+            <span class="version-label">Version</span>
+            <span class="version-value">{{ version }}</span>
+            <el-button type="primary" size="small" @click="checkUpdate">检查更新</el-button>
+          </div>
         </div>
       </el-card>
 
@@ -71,7 +115,7 @@ function changeLanguage(lang) {
         <div class="settings-section">
           <div class="setting-item">
             <span class="setting-label">{{ t('settings.theme') }}</span>
-            <el-select v-model="currentTheme" style="width: 180px" @change="(val) => { settingsStore.isDark = val === 'dark'; settingsStore.applyTheme() }">
+            <el-select v-model="currentTheme" style="width: 100%" @change="(val) => { settingsStore.isDark = val === 'dark'; settingsStore.applyTheme() }">
               <el-option v-for="theme in themes" :key="theme.value" :label="theme.label" :value="theme.value" />
             </el-select>
           </div>
@@ -146,6 +190,23 @@ function changeLanguage(lang) {
 .setting-label {
   font-size: 14px;
   color: var(--text-1);
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.version-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.version-label {
+  font-size: 14px;
+  color: var(--text-2);
+}
+.version-value {
+  font-size: 14px;
+  color: var(--text-1);
+  font-weight: 600;
 }
 
 .card-header {

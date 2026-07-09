@@ -820,15 +820,25 @@ onUnmounted(() => {
             </div>
           </div>
           <div v-if="displaySettings.fileType || displaySettings.duration || displaySettings.fileSize || displaySettings.channels || displaySettings.sampleRate" class="audio-meta">
-            <span v-if="displaySettings.fileType">{{ (audio.fileType || '').toUpperCase() }}</span>
+            <span v-if="displaySettings.fileType" class="file-type-tag">
+              <i class="iconfont icon-file"></i>
+              {{ (audio.fileType || '').toUpperCase() }}
+            </span>
             <span v-if="displaySettings.duration">{{ formatDuration(audio.duration) }}</span>
             <span v-if="displaySettings.fileSize">{{ formatSize(audio.fileSize) }}</span>
             <span v-if="displaySettings.channels && audio.channels">{{ audio.channels }}ch</span>
             <span v-if="displaySettings.sampleRate && audio.sampleRate">{{ audio.sampleRate / 1000 }}kHz</span>
           </div>
-          <div v-if="displaySettings.tags" class="audio-tags">
-            <span v-for="tag in audio.tags?.slice(0, 3)" :key="tag" class="audio-tag">{{ tag }}</span>
-            <span v-if="audio.tags?.length > 3" class="audio-tag">+{{ audio.tags.length - 3 }}</span>
+          <div v-if="displaySettings.tags && audio.tags && audio.tags.length" class="audio-tags">
+            <el-tag
+              v-for="t in audio.tags.slice(0, 4)"
+              :key="t"
+              size="small"
+            >
+              <span style="font-family: 'iconfont'; margin-right: 4px;">&#xeb2a;</span>
+              {{ t }}
+            </el-tag>
+            <span v-if="audio.tags.length > 4" class="more">+{{ audio.tags.length - 4 }}</span>
           </div>
         </div>
       </div>
@@ -1065,6 +1075,21 @@ onUnmounted(() => {
 .loop-text {
   font-size: 12px;
 }
+.file-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(6px);
+}
+.file-type-tag .iconfont {
+  font-size: 12px;
+}
 .audio-meta {
   display: flex;
   align-items: center;
@@ -1075,17 +1100,15 @@ onUnmounted(() => {
 }
 .audio-tags {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px;
   padding-left: 48px;
-  margin-top: 4px;
+  margin-top: 8px;
 }
-.audio-tag {
+.more {
   font-size: 11px;
-  padding: 2px 6px;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  border-radius: 4px;
+  color: var(--text-3);
+  padding: 1px 4px;
 }
 .selection-box {
   position: absolute;

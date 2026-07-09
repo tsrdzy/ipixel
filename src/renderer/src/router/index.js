@@ -41,6 +41,12 @@ const routes = [
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
     meta: { icon: '&#xe704;', title: 'menu.settings' }
+  },
+  {
+    path: '/logs',
+    name: 'logs',
+    component: () => import('../views/LogsView.vue'),
+    meta: { icon: '&#xe60a;', title: 'menu.operationLogs' }
   }
 ]
 

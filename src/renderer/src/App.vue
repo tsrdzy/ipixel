@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { useStore } from './composables/useStore'
 import { useSettingsStore } from './stores/settings'
 import { ElMessageBox, ElMessage, ElConfigProvider } from 'element-plus'
+import pkg from '../../../package.json'
 
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
@@ -112,14 +113,25 @@ async function showTutorial() {
 async function showAbout() {
   await ElMessageBox.alert(
     `<div style="text-align: center; padding: 10px;">
-      <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">IMODEL</div>
-      <div style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">${t('menu.version')} 1.0.0</div>
+      <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">iPixel</div>
+      <div style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">${t('menu.version')} ${pkg.version}</div>
       <div style="font-size: 13px; color: var(--text-3); line-height: 1.6;">
-        <p>${t('menu.aboutDesc')}</p>
+        <p>一个简洁高效的素材资源管理工具，支持3D模型、图片、音频、字体等多种格式的本地化管理。</p>
         <p style="margin-top: 12px;">${t('menu.license')}</p>
       </div>
-      <div style="margin-top: 16px;">
-        <a href="${GITHUB_REPO}" target="_blank" style="color: var(--primary); text-decoration: none;">${GITHUB_REPO}</a>
+      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 24px;">
+        <a href="https://qm.qq.com/q/WqXZDSTHoW" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="QQ群">
+          <span style="font-family: 'iconfont';">&#xe882;</span>
+        </a>
+        <a href="https://space.bilibili.com/364755642?spm_id_from=333.1007.0.0" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="B站">
+          <span style="font-family: 'iconfont';">&#xea95;</span>
+        </a>
+        <a href="${GITHUB_REPO}" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="GitHub">
+          <span style="font-family: 'iconfont';">&#xe691;</span>
+        </a>
+        <a href="mailto:420792287@qq.com" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="邮件反馈">
+          <span style="font-family: 'iconfont';">&#xe62e;</span>
+        </a>
       </div>
     </div>`,
     t('menu.about'),
@@ -131,37 +143,7 @@ async function showAbout() {
   )
 }
 
-async function checkUpdate() {
-  ElMessage.info(t('menu.checkingUpdate'))
-  try {
-    const response = await fetch('https://api.github.com/repos/tsrdzy/ipixel/releases/latest')
-    if (!response.ok) {
-      throw new Error('Network error')
-    }
-    const data = await response.json()
-    const latestVersion = data.tag_name || '1.0.0'
-    if (latestVersion !== '1.0.0') {
-      try {
-        await ElMessageBox.confirm(
-          t('menu.newVersion', { version: latestVersion }),
-          t('menu.updateAvailable'),
-          {
-            confirmButtonText: t('menu.download'),
-            cancelButtonText: t('common.cancel'),
-            type: 'success'
-          }
-        )
-        window.open(data.html_url, '_blank')
-      } catch {
-        // 用户取消
-      }
-    } else {
-      ElMessage.success(t('menu.latestVersion'))
-    }
-  } catch {
-    ElMessage.error(t('menu.checkUpdateFailed'))
-  }
-}
+
 
 function handleMoreCommand(command) {
   switch (command) {
@@ -171,14 +153,14 @@ function handleMoreCommand(command) {
     case 'feedback':
       openGitHubUrl('/issues')
       break
-    case 'update':
-      checkUpdate()
-      break
     case 'settings':
       window.location.hash = '#/settings'
       break
     case 'about':
       showAbout()
+      break
+    case 'logs':
+      window.location.hash = '#/logs'
       break
   }
 }
@@ -221,21 +203,18 @@ onBeforeUnmount(() => {
       <div class="titlebar-drag" />
 
       <div class="titlebar-right">
-        <!-- 主题切换按钮 -->
-        <el-button
+        <div
           v-if="settingsStore.showThemeInTitlebar"
-          class="win-btn theme-btn"
-          link
+          class="title-btn theme-btn"
           @click="settingsStore.toggleTheme"
           :title="isDark ? t('common.theme.toggleLight') : t('common.theme.toggleDark')"
         >
           <i :class="['iconfont', isDark ? 'icon-sun' : 'icon-moon']"></i>
-        </el-button>
-        <!-- 语言切换下拉菜单 -->
+        </div>
         <el-dropdown v-if="settingsStore.showLanguageInTitlebar" @command="changeLanguage">
-          <el-button class="win-btn lang-btn" link>
+          <div class="title-btn lang-btn">
             <span style="font-family: 'iconfont'; font-size: 14px;">&#xeaae;</span>
-          </el-button>
+          </div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-for="lang in languages" :key="lang.code" :command="lang.code">
@@ -245,30 +224,15 @@ onBeforeUnmount(() => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button
-          class="win-btn"
-          link
-          @click="minimize"
-          title="最小化"
-        >
+        <div class="title-btn" @click="minimize" title="最小化">
           <i class="iconfont icon-minus"></i>
-        </el-button>
-        <el-button
-          class="win-btn"
-          link
-          @click="toggleMaximize"
-          :title="isMax ? '还原' : '最大化'"
-        >
+        </div>
+        <div class="title-btn" @click="toggleMaximize" :title="isMax ? '还原' : '最大化'">
           <i class="iconfont icon-checkbox-on"></i>
-        </el-button>
-        <el-button
-          class="win-btn close"
-          link
-          @click="closeApp"
-          title="关闭"
-        >
+        </div>
+        <div class="title-btn close" @click="closeApp" title="关闭">
           <i class="iconfont icon-close"></i>
-        </el-button>
+        </div>
       </div>
     </header>
 
@@ -298,9 +262,9 @@ onBeforeUnmount(() => {
                 <el-dropdown-menu>
                   <el-dropdown-item command="tutorial">{{ t('menu.tutorial') }}</el-dropdown-item>
                   <el-dropdown-item command="feedback">{{ t('menu.feedback') }}</el-dropdown-item>
-                  <el-dropdown-item command="update">{{ t('menu.checkUpdate') }}</el-dropdown-item>
                   <el-dropdown-item command="settings">{{ t('menu.settings') }}</el-dropdown-item>
-                  <el-dropdown-item command="about" divided>{{ t('menu.about') }}</el-dropdown-item>
+                  <el-dropdown-item command="logs" divided>操作日志</el-dropdown-item>
+                  <el-dropdown-item command="about">{{ t('menu.about') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -312,6 +276,7 @@ onBeforeUnmount(() => {
         <router-view />
       </div>
     </main>
+    <OperationLogs v-model="logsVisible" />
   </div>
   </ElConfigProvider>
 </template>
@@ -378,52 +343,32 @@ onBeforeUnmount(() => {
   align-items: center;
   height: 100%;
   -webkit-app-region: no-drag;
+  gap: 0;
 }
 
-.lang-btn {
+.title-btn {
   width: 46px;
   height: 36px;
-  padding: 0 !important;
-  color: var(--text-2) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: all 0.15s;
 }
-.lang-btn:hover {
-  background: var(--bg-hover) !important;
-  color: var(--text-1) !important;
-}
-.lang-btn :deep(.el-dropdown-menu__item.is-active) {
-  background: transparent;
+
+.title-btn:hover {
+  background: var(--bg-hover);
   color: var(--text-1);
 }
 
-.more-dropdown {
-  -webkit-app-region: no-drag;
-}
-.more-btn {
-  width: 36px;
-  height: 30px;
-  padding: 0 !important;
-  color: var(--text-2) !important;
-}
-.more-btn:hover {
-  background: var(--bg-hover) !important;
-  color: var(--text-1) !important;
+.title-btn.close:hover {
+  background: #e81123;
+  color: #fff;
 }
 
-.win-btn {
-  width: 46px;
-  height: 36px;
-  padding: 0 !important;
-  color: var(--text-2) !important;
-}
-
-.win-btn:hover {
-  background: var(--bg-hover) !important;
-  color: var(--text-1) !important;
-}
-
-.win-btn.close:hover {
-  background: #e81123 !important;
-  color: #fff !important;
+.title-btn .iconfont {
+  font-size: 14px;
 }
 
 .app-content {

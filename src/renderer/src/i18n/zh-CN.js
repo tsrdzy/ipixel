@@ -101,6 +101,7 @@ export default {
     about: '关于 iModel',
     version: '版本',
     settings: '设置',
+    operationLogs: '操作日志',
     aboutDesc: '一个简洁高效的3D模型资源管理工具，支持GLB、GLTF、OBJ、STL等多种格式。',
     license: '开源协议：MIT License'
   },

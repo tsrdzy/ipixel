@@ -101,6 +101,7 @@ export default {
     about: 'About iModel',
     version: 'Version',
     settings: 'Settings',
+    operationLogs: 'Operation Logs',
     aboutDesc: 'A clean and efficient 3D model library management tool, supports GLB, GLTF, OBJ, STL and more formats.',
     license: 'License: MIT License'
   },

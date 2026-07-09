@@ -101,6 +101,7 @@ export default {
     about: 'О iModel',
     version: 'Версия',
     settings: 'Настройки',
+    operationLogs: 'Журнал операций',
     aboutDesc: 'Чистый и эффективный инструмент для управления 3D-моделями, поддерживает GLB, GLTF, OBJ, STL и другие форматы.',
     license: 'Лицензия: MIT License'
   },

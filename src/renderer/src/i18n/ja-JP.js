@@ -101,6 +101,7 @@ export default {
     about: 'iModel について',
     version: 'バージョン',
     settings: '設定',
+    operationLogs: '操作ログ',
     aboutDesc: 'GLB、GLTF、OBJ、STLなどの複数フォーマットに対応する、クリーンで効率的な3Dモデルライブラリ管理ツールです。',
     license: 'ライセンス：MIT License'
   },

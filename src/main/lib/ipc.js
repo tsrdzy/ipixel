@@ -33,6 +33,22 @@ import {
   hashFile,
   findModelByHash
 } from './store.js'
+import {
+  logLibraryCreate,
+  logLibraryOpen,
+  logLibraryDelete,
+  logLibraryRename,
+  logUpload,
+  logBatchUpload,
+  logDelete,
+  logExport,
+  logError,
+  getLogs,
+  getLogsCount,
+  exportLogs,
+  clearLogs,
+  getDeviceInfo
+} from './logger.js'
 
 async function readModelCover(folderPath, model) {
   if (!model.cover) return null
@@ -91,39 +107,63 @@ export function registerIpc() {
 
   // 在选定文件夹创建资源库（必须为空文件夹）
   ipcMain.handle('library:create', async (_e, folderPath, name) => {
-    const library = await initLibrary(folderPath, name)
-    setLibraryPath(folderPath)
-    addLibrary(folderPath, library.name)
-    return { libraryPath: folderPath, library, libraries: getLibraries() }
+    try {
+      const library = await initLibrary(folderPath, name)
+      setLibraryPath(folderPath)
+      addLibrary(folderPath, library.name)
+      logLibraryCreate(folderPath, name)
+      return { libraryPath: folderPath, library, libraries: getLibraries() }
+    } catch (e) {
+      logError('library', e.message, e.stack)
+      throw e
+    }
   })
 
   // 打开列表中的已有资源库
   ipcMain.handle('library:open', async (_e, folderPath) => {
-    const valid = await isValidLibrary(folderPath)
-    if (!valid) {
-      throw new Error('所选文件夹不是有效的资源库，可能已损坏或被删除')
+    try {
+      const valid = await isValidLibrary(folderPath)
+      if (!valid) {
+        throw new Error('所选文件夹不是有效的资源库，可能已损坏或被删除')
+      }
+      setLibraryPath(folderPath)
+      openDB(folderPath)
+      const library = await loadLibrary(folderPath)
+      touchLibrary(folderPath)
+      logLibraryOpen(folderPath)
+      return { libraryPath: folderPath, library, libraries: getLibraries() }
+    } catch (e) {
+      logError('library', e.message, e.stack)
+      throw e
     }
-    setLibraryPath(folderPath)
-    openDB(folderPath)
-    const library = await loadLibrary(folderPath)
-    touchLibrary(folderPath)
-    return { libraryPath: folderPath, library, libraries: getLibraries() }
   })
 
   // 从资源库列表中删除记录（不删除磁盘文件）
   ipcMain.handle('library:remove', async (_e, folderPath) => {
-    removeLibrary(folderPath)
-    return getLibraries()
+    try {
+      removeLibrary(folderPath)
+      logLibraryDelete(folderPath)
+      return getLibraries()
+    } catch (e) {
+      logError('library', e.message, e.stack)
+      throw e
+    }
   })
 
   // 重命名资源库（同时更新 library.json 和配置列表）
   ipcMain.handle('library:rename', async (_e, folderPath, newName) => {
-    const library = await loadLibrary(folderPath)
-    if (!library) throw new Error('资源库不存在')
-    library.name = newName
-    await saveLibrary(folderPath, library)
-    renameLibrary(folderPath, newName)
-    return { libraryPath: folderPath, library, libraries: getLibraries() }
+    try {
+      const library = await loadLibrary(folderPath)
+      if (!library) throw new Error('资源库不存在')
+      library.name = newName
+      await saveLibrary(folderPath, library)
+      renameLibrary(folderPath, newName)
+      logLibraryRename(folderPath, newName)
+      return { libraryPath: folderPath, library, libraries: getLibraries() }
+    } catch (e) {
+      logError('library', e.message, e.stack)
+      throw e
+    }
   })
 
   // 浏览并打开已有资源库（弹窗选择 → 校验 → 打开）
@@ -199,48 +239,55 @@ export function registerIpc() {
 
   // 选择并上传模型主文件
   ipcMain.handle('models:upload', async () => {
-    const p = getLibraryPath()
-    if (!p) throw new Error('未设置资源库')
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
 
-    const result = await dialog.showOpenDialog({
-      title: '选择 3D 模型文件',
-      filters: [
-        { name: '3D 模型', extensions: ['glb', 'gltf', 'obj', 'stl', 'json', 'fbx'] }
-      ],
-      properties: ['openFile']
-    })
-    if (result.canceled || result.filePaths.length === 0) return null
+      const result = await dialog.showOpenDialog({
+        title: '选择 3D 模型文件',
+        filters: [
+          { name: '3D 模型', extensions: ['glb', 'gltf', 'obj', 'stl', 'json', 'fbx'] }
+        ],
+        properties: ['openFile']
+      })
+      if (result.canceled || result.filePaths.length === 0) return null
 
-    const sourcePath = result.filePaths[0]
-    const ext = sourcePath.split('.').pop().toLowerCase()
-    const mainName = sourcePath.split(/[\\/]/).pop()
-    const baseName = mainName.replace(/\.[^.]+$/, '')
+      const sourcePath = result.filePaths[0]
+      const ext = sourcePath.split('.').pop().toLowerCase()
+      const mainName = sourcePath.split(/[\\/]/).pop()
+      const baseName = mainName.replace(/\.[^.]+$/, '')
 
-    const hash = await hashFile(sourcePath)
-    const existing = findModelByHash(hash)
-    if (existing) {
-      return {
-        duplicate: true,
-        existingModel: existing,
-        pendingFile: { path: sourcePath, name: mainName, ext, hash, defaultName: baseName }
+      const hash = await hashFile(sourcePath)
+      const existing = findModelByHash(hash)
+      if (existing) {
+        return {
+          duplicate: true,
+          existingModel: existing,
+          pendingFile: { path: sourcePath, name: mainName, ext, hash, defaultName: baseName }
+        }
       }
-    }
 
-    const files = [{ path: sourcePath, name: mainName, role: 'main' }]
-    const record = await addModel(p, files, ext, hash)
-    const mainFile = await readModelFile(p, record.id, record.fileName)
+      const files = [{ path: sourcePath, name: mainName, role: 'main' }]
+      const record = await addModel(p, files, ext, hash)
+      const mainFile = await readModelFile(p, record.id, record.fileName)
 
-    return {
-      duplicate: false,
-      id: record.id,
-      fileName: record.fileName,
-      fileType: record.meta.fileType,
-      fileSize: record.meta.fileSize,
-      files: record.files,
-      uploadTime: record.meta.uploadTime,
-      dataBase64: mainFile.toString('base64'),
-      auxFiles: [],
-      defaultName: baseName
+      logUpload('models', mainName, ext)
+
+      return {
+        duplicate: false,
+        id: record.id,
+        fileName: record.fileName,
+        fileType: record.meta.fileType,
+        fileSize: record.meta.fileSize,
+        files: record.files,
+        uploadTime: record.meta.uploadTime,
+        dataBase64: mainFile.toString('base64'),
+        auxFiles: [],
+        defaultName: baseName
+      }
+    } catch (e) {
+      logError('models', e.message, e.stack)
+      throw e
     }
   })
 
@@ -513,9 +560,15 @@ export function registerIpc() {
 
   // 删除模型
   ipcMain.handle('models:delete', async (_e, id) => {
-    const p = getLibraryPath()
-    await deleteModel(p, id)
-    return true
+    try {
+      const p = getLibraryPath()
+      await deleteModel(p, id)
+      logDelete('models', id, '')
+      return true
+    } catch (e) {
+      logError('models', e.message, e.stack)
+      throw e
+    }
   })
 
   // 导出模型
@@ -553,5 +606,45 @@ export function registerIpc() {
     }
 
     return { targetDir, fileCount: exported.length, files: exported }
+  })
+
+  // ====== 操作日志 ======
+
+  ipcMain.handle('logs:query', async (_e, options) => {
+    try {
+      const logs = getLogs(options)
+      const count = getLogsCount(options)
+      return { logs, count }
+    } catch (e) {
+      logError('logs', e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('logs:export', async () => {
+    try {
+      return exportLogs()
+    } catch (e) {
+      logError('logs', e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('logs:clear', async (_e, beforeDate) => {
+    try {
+      return clearLogs(beforeDate)
+    } catch (e) {
+      logError('logs', e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('logs:getDeviceInfo', async () => {
+    try {
+      return getDeviceInfo()
+    } catch (e) {
+      logError('logs', e.message, e.stack)
+      throw e
+    }
   })
 }
