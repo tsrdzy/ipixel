@@ -1,9 +1,9 @@
 {
-  "name": "imodel",
-  "version": "0.1.6",
-  "description": "An Electron application with Vue",
+  "name": "ipixel",
+  "version": "0.1.8",
+  "description": "A material resource management software aided by AI development",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "tsrdzy",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
