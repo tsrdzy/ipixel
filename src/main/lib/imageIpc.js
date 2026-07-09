@@ -16,6 +16,7 @@ import {
   exportImage,
   saveSplitResult
 } from './imageStore.js'
+import { logUpload, logBatchUpload, logDelete, logExport, logError } from './logger.js'
 
 /** 注册图片相关 IPC 处理器 */
 export function registerImageIpc() {
@@ -36,91 +37,108 @@ export function registerImageIpc() {
 
   // 选择并导入图片
   ipcMain.handle('images:upload', async () => {
-    const p = getLibraryPath()
-    if (!p) throw new Error('未设置资源库')
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
 
-    const result = await dialog.showOpenDialog({
-      title: '选择图片文件',
-      filters: [
-        { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga'] }
-      ],
-      properties: ['openFile']
-    })
-    if (result.canceled || result.filePaths.length === 0) return null
+      const result = await dialog.showOpenDialog({
+        title: '选择图片文件',
+        filters: [
+          { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga'] }
+        ],
+        properties: ['openFile']
+      })
+      if (result.canceled || result.filePaths.length === 0) return null
 
-    const filePath = result.filePaths[0]
-    const hash = await hashFile(filePath)
+      const filePath = result.filePaths[0]
+      const fileName = filePath.split(/[\\/]/).pop()
+      const ext = fileName.split('.').pop().toLowerCase()
+      const hash = await hashFile(filePath)
 
-    // 检查重复
-    const existing = findImageByHash(hash)
-    if (existing) {
-      return { duplicate: true, existingImage: existing }
+      // 检查重复
+      const existing = findImageByHash(hash)
+      if (existing) {
+        return { duplicate: true, existingImage: existing }
+      }
+
+      const record = await addImage(p, filePath, hash)
+      logUpload('images', fileName, ext)
+      return { duplicate: false, meta: record.meta }
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
     }
-
-    const record = await addImage(p, filePath, hash)
-    return { duplicate: false, meta: record.meta }
   })
 
   // 批量导入图片
   ipcMain.handle('images:batch-upload', async (event) => {
-    const p = getLibraryPath()
-    if (!p) throw new Error('未设置资源库')
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
 
-    const result = await dialog.showOpenDialog({
-      title: '批量选择图片文件',
-      filters: [
-        { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga'] }
-      ],
-      properties: ['multiSelections', 'openFile']
-    })
-    if (result.canceled || result.filePaths.length === 0) return null
-
-    const filePaths = result.filePaths
-    const total = filePaths.length
-    const items = []
-    const batchHashes = new Set()
-
-    for (let i = 0; i < filePaths.length; i++) {
-      const filePath = filePaths[i]
-      const fileName = filePath.split(/[\\/]/).pop()
-      const baseName = fileName.replace(/\.[^.]+$/, '')
-
-      event.sender.send('images:batch-upload:progress', {
-        current: i + 1,
-        total,
-        fileName,
-        stage: 'importing'
+      const result = await dialog.showOpenDialog({
+        title: '批量选择图片文件',
+        filters: [
+          { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga'] }
+        ],
+        properties: ['multiSelections', 'openFile']
       })
+      if (result.canceled || result.filePaths.length === 0) return null
 
-      try {
-        const hash = await hashFile(filePath)
+      const filePaths = result.filePaths
+      const total = filePaths.length
+      const items = []
+      const batchHashes = new Set()
 
-        if (batchHashes.has(hash)) {
-          items.push({ skipped: true, fileName, message: '批次内重复' })
-          continue
-        }
+      for (let i = 0; i < filePaths.length; i++) {
+        const filePath = filePaths[i]
+        const fileName = filePath.split(/[\\/]/).pop()
+        const baseName = fileName.replace(/\.[^.]+$/, '')
 
-        const existing = findImageByHash(hash)
-        if (existing) {
-          items.push({ duplicate: true, existingImage: existing, fileName })
-          batchHashes.add(hash)
-          continue
-        }
-
-        batchHashes.add(hash)
-        const record = await addImage(p, filePath, hash)
-
-        items.push({
-          duplicate: false,
-          meta: record.meta
+        event.sender.send('images:batch-upload:progress', {
+          current: i + 1,
+          total,
+          fileName,
+          stage: 'importing'
         })
-      } catch (e) {
-        console.error('[ImageBatchUpload] 失败:', fileName, e)
-        items.push({ error: true, fileName, message: e.message || '导入失败' })
-      }
-    }
 
-    return { total, items }
+        try {
+          const hash = await hashFile(filePath)
+
+          if (batchHashes.has(hash)) {
+            items.push({ skipped: true, fileName, message: '批次内重复' })
+            continue
+          }
+
+          const existing = findImageByHash(hash)
+          if (existing) {
+            items.push({ duplicate: true, existingImage: existing, fileName })
+            batchHashes.add(hash)
+            continue
+          }
+
+          batchHashes.add(hash)
+          const record = await addImage(p, filePath, hash)
+
+          items.push({
+            duplicate: false,
+            meta: record.meta
+          })
+        } catch (e) {
+          console.error('[ImageBatchUpload] 失败:', fileName, e)
+          items.push({ error: true, fileName, message: e.message || '导入失败' })
+        }
+      }
+
+      const successCount = items.filter(item => !item.duplicate && !item.skipped && !item.error).length
+      const failedCount = items.filter(item => item.error).length
+      logBatchUpload('images', total, successCount, failedCount)
+
+      return { total, items }
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
+    }
   })
 
   // 保存图片元数据到数据库
@@ -137,10 +155,16 @@ export function registerImageIpc() {
 
   // 删除图片
   ipcMain.handle('images:delete', async (_e, id) => {
-    const p = getLibraryPath()
-    if (!p) throw new Error('未设置资源库')
-    await deleteImage(p, id)
-    return true
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+      await deleteImage(p, id)
+      logDelete('images', id, '')
+      return true
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
+    }
   })
 
   // 导出图片

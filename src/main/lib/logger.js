@@ -54,21 +54,26 @@ export function getDeviceInfo() {
 
 export function logOperation(type, module, detail, status = 'success', errorMessage = '') {
   const db = getDB()
-  if (!db) return
+  if (!db) {
+    console.warn('[Logger] DB not available, skipping log:', type, module)
+    return
+  }
   
   try {
-    db.prepare(`
+    const detailStr = typeof detail === 'object' ? JSON.stringify(detail) : String(detail)
+    const result = db.prepare(`
       INSERT INTO operation_logs (timestamp, operation_type, module, detail, status, error_message, device_info)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       new Date().toISOString(),
       type,
       module,
-      typeof detail === 'object' ? JSON.stringify(detail) : String(detail),
+      detailStr,
       status,
       errorMessage || '',
       deviceInfo ? JSON.stringify(deviceInfo) : '{}'
     )
+    console.log('[Logger] Logged:', type, module, 'id:', result.lastInsertRowid)
   } catch (e) {
     console.error('[Logger] Failed to write log:', e)
   }

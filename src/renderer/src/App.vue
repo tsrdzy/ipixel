@@ -276,7 +276,6 @@ onBeforeUnmount(() => {
         <router-view />
       </div>
     </main>
-    <OperationLogs v-model="logsVisible" />
   </div>
   </ElConfigProvider>
 </template>

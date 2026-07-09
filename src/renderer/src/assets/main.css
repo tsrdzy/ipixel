@@ -80,6 +80,9 @@
 .topbar-right .el-button {
   margin: 0 !important;
   padding: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: var(--radius-sm) !important;
 }
 
 .topbar-right .el-button + .el-button {

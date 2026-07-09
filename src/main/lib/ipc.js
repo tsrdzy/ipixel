@@ -402,6 +402,10 @@ export function registerIpc() {
       }
     }
 
+    const successCount = items.filter(item => !item.duplicate && !item.skipped && !item.error).length
+    const failedCount = items.filter(item => item.error).length
+    logBatchUpload('models', total, successCount, failedCount)
+
     return { total, items }
   })
 
