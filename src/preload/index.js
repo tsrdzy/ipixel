@@ -86,7 +86,8 @@ const api = {
     update: (id, patch) => ipcRenderer.invoke('images:update', id, patch),
     delete: (id) => ipcRenderer.invoke('images:delete', id),
     export: (image) => ipcRenderer.invoke('images:export', image),
-    saveSplitResult: (file) => ipcRenderer.invoke('images:save-split-result', file)
+    saveSplitResult: (file) => ipcRenderer.invoke('images:save-split-result', file),
+    importBuffer: (fileName, buffer) => ipcRenderer.invoke('images:importBuffer', fileName, buffer)
   },
 
   // ====== 音频 ======
@@ -140,6 +141,12 @@ const api = {
     export: () => ipcRenderer.invoke('logs:export'),
     clear: (beforeDate) => ipcRenderer.invoke('logs:clear', beforeDate),
     getDeviceInfo: () => ipcRenderer.invoke('logs:getDeviceInfo')
+  },
+
+  // ====== 工具 ======
+  tools: {
+    convertToIco: (arrayBuffer) => ipcRenderer.invoke('tools:convertToIco', arrayBuffer),
+    convertImageFormat: (arrayBuffer, format) => ipcRenderer.invoke('tools:convertImageFormat', arrayBuffer, format)
   }
 }
 

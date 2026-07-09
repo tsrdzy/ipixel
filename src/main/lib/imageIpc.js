@@ -147,6 +147,36 @@ export function registerImageIpc() {
     return commitImage(safeMeta)
   })
 
+  // 从 Buffer 导入图片（用于工具导入）
+  ipcMain.handle('images:importBuffer', async (_e, fileName, buffer) => {
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+
+      const inputBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+      const crypto = await import('crypto')
+      const hash = crypto.createHash('sha256').update(inputBuffer).digest('hex')
+
+      const existing = findImageByHash(hash)
+      if (existing) {
+        return { duplicate: true, existingImage: existing }
+      }
+
+      const tempPath = join(p, 'temp_' + Date.now() + '_' + fileName)
+      fs.writeFileSync(tempPath, inputBuffer)
+
+      const record = await addImage(p, tempPath, hash)
+      fs.unlinkSync(tempPath)
+
+      const ext = fileName.split('.').pop().toLowerCase()
+      logUpload('images', fileName, ext)
+      return { duplicate: false, meta: record.meta }
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
+    }
+  })
+
   // 更新图片元数据
   ipcMain.handle('images:update', async (_e, id, patch) => {
     const safePatch = JSON.parse(JSON.stringify(patch))

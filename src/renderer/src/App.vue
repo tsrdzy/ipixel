@@ -408,6 +408,8 @@ onBeforeUnmount(() => {
   border: none;
   background: transparent;
   transition: all 0.15s;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .sidebar-item:hover {
   background: var(--bg-hover);

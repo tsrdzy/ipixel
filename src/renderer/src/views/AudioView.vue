@@ -42,6 +42,11 @@ const allFieldsSelected = computed({
     onDisplayChange()
   }
 })
+
+const isIndeterminate = computed(() => {
+  const values = Object.values(displaySettings)
+  return values.some(v => v) && !values.every(v => v)
+})
 function onSelectAll(val) {
   allFieldsSelected.value = val
 }
@@ -670,7 +675,8 @@ onUnmounted(() => {
             </el-button>
           </template>
           <div style="display: flex; flex-direction: column; gap: 8px; padding: 4px;">
-            <el-checkbox v-model="allFieldsSelected" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <el-checkbox v-model="allFieldsSelected" :indeterminate="isIndeterminate" @change="onSelectAll">{{ t('common.selectAll') }}</el-checkbox>
+            <div style="border-bottom: 1px solid var(--border-soft); margin: 4px 0;"></div>
             <el-checkbox v-model="displaySettings.name" @change="onDisplayChange">{{ t('common.name') }}</el-checkbox>
             <el-checkbox v-model="displaySettings.tags" @change="onDisplayChange">{{ t('common.tags') }}</el-checkbox>
             <el-checkbox v-model="displaySettings.duration" @change="onDisplayChange">{{ t('audio.duration') }}</el-checkbox>
@@ -815,7 +821,7 @@ onUnmounted(() => {
                 @dblclick.stop
                 :title="isLooping ? '取消循环' : '循环播放'"
               >
-                <span class="loop-text">{{ isLooping ? '循环中' : '循环' }}</span>
+                <span class="iconfont loop-icon">&#xeb54;</span>
               </button>
             </div>
           </div>
@@ -1072,8 +1078,8 @@ onUnmounted(() => {
   border-color: var(--primary);
   color: white;
 }
-.loop-text {
-  font-size: 12px;
+.loop-icon {
+  font-size: 16px;
 }
 .file-type-tag {
   display: inline-flex;

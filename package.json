@@ -1,6 +1,6 @@
 {
   "name": "imodel",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "An Electron application with Vue",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -35,8 +35,10 @@
     "element-plus": "^2.14.2",
     "fflate": "^0.8.3",
     "file-saver": "^2.0.5",
+    "image-conversion": "^2.1.1",
     "jszip": "^3.10.1",
     "pinia": "^3.0.4",
+    "png-to-ico": "^3.0.2",
     "save": "^2.9.0",
     "systeminformation": "^4.34.23",
     "three": "^0.185.1",

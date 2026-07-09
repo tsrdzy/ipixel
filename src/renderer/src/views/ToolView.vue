@@ -4,6 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { ElDialog } from 'element-plus'
 import ImageSplitTool from './tools/ImageSplitTool.vue'
 import ImageMergeTool from './tools/ImageMergeTool.vue'
+import ImageCompressTool from './tools/ImageCompressTool.vue'
+import IcoGeneratorTool from './tools/IcoGeneratorTool.vue'
+import ImageFormatTool from './tools/ImageFormatTool.vue'
 
 const { t } = useI18n()
 
@@ -22,8 +25,11 @@ const categories = [
 
 const tools = {
   image: [
-    { id: 'split', name: t('tools.imageSplit'), description: t('tools.imageSplitDesc') },
-    { id: 'merge', name: t('tools.imageMerge'), description: t('tools.imageMergeDesc') }
+    { id: 'split', name: t('tools.imageSplit'), description: t('tools.imageSplitDesc'), lastUpdate: '2026-07-08' },
+    { id: 'merge', name: t('tools.imageMerge'), description: t('tools.imageMergeDesc'), lastUpdate: '2026-07-08' },
+    { id: 'compress', name: t('tools.imageCompress'), description: t('tools.imageCompressDesc'), lastUpdate: '2026-07-09' },
+    { id: 'format', name: t('tools.imageFormat'), description: t('tools.imageFormatDesc'), lastUpdate: '2026-07-10' },
+    { id: 'ico', name: t('tools.icoGenerator'), description: t('tools.icoGeneratorDesc'), lastUpdate: '2026-07-10' }
   ],
   video: [],
   audio: [],
@@ -45,7 +51,9 @@ function closeDialog() {
 <template>
   <div class="tool-view">
     <div class="tool-header">
-      <h2>{{ t('sidebar.tools') }}</h2>
+      <div class="header-left">
+        <h2>{{ t('sidebar.tools') }}</h2>
+      </div>
       <div class="category-tabs">
         <button
           v-for="cat in categories"
@@ -71,6 +79,7 @@ function closeDialog() {
           <div class="tool-info">
             <h3 class="tool-name">{{ tool.name }}</h3>
             <p class="tool-desc">{{ tool.description }}</p>
+            <span class="tool-update">{{ t('tools.lastUpdate') }}: {{ tool.lastUpdate }}</span>
           </div>
         </div>
       </div>
@@ -89,6 +98,9 @@ function closeDialog() {
     >
       <ImageSplitTool v-if="selectedTool?.id === 'split'" />
       <ImageMergeTool v-if="selectedTool?.id === 'merge'" />
+      <ImageCompressTool v-if="selectedTool?.id === 'compress'" />
+      <ImageFormatTool v-if="selectedTool?.id === 'format'" />
+      <IcoGeneratorTool v-if="selectedTool?.id === 'ico'" />
     </ElDialog>
   </div>
 </template>
@@ -101,6 +113,7 @@ function closeDialog() {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .tool-header {
@@ -109,10 +122,27 @@ function closeDialog() {
   background: var(--bg-soft);
 }
 
+.tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .tool-header h2 {
   font-size: 20px;
-  margin: 0 0 12px 0;
+  margin: 0;
   font-weight: 600;
+}
+
+.last-update {
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 .category-tabs {
@@ -207,6 +237,13 @@ function closeDialog() {
   font-size: 13px;
   color: var(--text-3);
   margin: 0;
+}
+
+.tool-update {
+  font-size: 11px;
+  color: var(--text-4);
+  display: block;
+  margin-top: 4px;
 }
 
 .empty-state {

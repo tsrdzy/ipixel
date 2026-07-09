@@ -18,14 +18,9 @@ async function checkUpdate() {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     const data = await response.json()
-    console.log('[Update] GitHub API response:', JSON.stringify(data, null, 2))
     
     const latestVersion = (data.tag_name || '1.0.0').replace(/^v/i, '')
     const currentVersion = version.value
-    
-    console.log('[Update] Current version:', currentVersion)
-    console.log('[Update] Latest version:', latestVersion)
-    console.log('[Update] Update URL:', data.html_url)
     
     if (latestVersion !== currentVersion) {
       try {
@@ -46,7 +41,6 @@ async function checkUpdate() {
       ElMessage.success(t('menu.latestVersion'))
     }
   } catch (e) {
-    console.error('[Update] Check failed:', e.message)
     ElMessage.error(t('menu.checkUpdateFailed'))
   }
 }
@@ -90,12 +84,9 @@ function changeLanguage(lang) {
         <template #header>
           <span>{{ t('settings.general') }}</span>
         </template>
-        <div class="settings-section">
-          <div class="version-info">
-            <span class="version-label">Version</span>
-            <span class="version-value">{{ version }}</span>
-            <el-button type="primary" size="small" @click="checkUpdate">检查更新</el-button>
-          </div>
+        <div class="settings-section version-section">
+          <span class="version-text">{{ version }}</span>
+          <el-button type="primary" size="small" @click="checkUpdate">检查更新</el-button>
         </div>
       </el-card>
 
@@ -194,25 +185,22 @@ function changeLanguage(lang) {
   width: 80px;
 }
 
-.version-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.version-label {
-  font-size: 14px;
-  color: var(--text-2);
-}
-.version-value {
-  font-size: 14px;
-  color: var(--text-1);
-  font-weight: 600;
-}
-
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+}
+
+.version-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.version-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-1);
 }
 </style>

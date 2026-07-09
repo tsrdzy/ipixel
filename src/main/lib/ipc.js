@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, nativeImage } from 'electron'
 import { join } from 'path'
 import fs from 'fs'
 import fsp from 'fs/promises'
@@ -648,6 +648,95 @@ export function registerIpc() {
       return getDeviceInfo()
     } catch (e) {
       logError('logs', e.message, e.stack)
+      throw e
+    }
+  })
+
+  function createIco(buffer) {
+    const img = nativeImage.createFromBuffer(buffer)
+    const sizes = [16, 32, 48, 64, 128, 256]
+    const iconEntries = []
+    const iconData = []
+    let offset = 6 + sizes.length * 16
+
+    for (const size of sizes) {
+      const resized = img.resize({ width: size, height: size, quality: 'best' })
+      const pngData = resized.toPNG()
+      
+      iconEntries.push({
+        width: size,
+        height: size,
+        colorCount: 0,
+        reserved: 0,
+        planes: 1,
+        bitsPerPixel: 32,
+        size: pngData.length,
+        offset: offset
+      })
+      iconData.push(pngData)
+      offset += pngData.length
+    }
+
+    const header = Buffer.alloc(6)
+    header.writeUInt16LE(0, 0)
+    header.writeUInt16LE(1, 2)
+    header.writeUInt16LE(sizes.length, 4)
+
+    const entries = Buffer.alloc(sizes.length * 16)
+    let entryOffset = 0
+    for (const entry of iconEntries) {
+      entries.writeUInt8(entry.width === 256 ? 0 : entry.width, entryOffset)
+      entries.writeUInt8(entry.height === 256 ? 0 : entry.height, entryOffset + 1)
+      entries.writeUInt8(entry.colorCount, entryOffset + 2)
+      entries.writeUInt8(entry.reserved, entryOffset + 3)
+      entries.writeUInt16LE(entry.planes, entryOffset + 4)
+      entries.writeUInt16LE(entry.bitsPerPixel, entryOffset + 6)
+      entries.writeUInt32LE(entry.size, entryOffset + 8)
+      entries.writeUInt32LE(entry.offset, entryOffset + 12)
+      entryOffset += 16
+    }
+
+    return Buffer.concat([header, entries, ...iconData])
+  }
+
+  ipcMain.handle('tools:convertToIco', async (_e, imageBuffer) => {
+    try {
+      const inputBuffer = Buffer.isBuffer(imageBuffer) ? imageBuffer : Buffer.from(imageBuffer)
+      return createIco(inputBuffer)
+    } catch (e) {
+      logError('tools', 'ICO转换失败: ' + e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('tools:convertImageFormat', async (_e, buffer, format) => {
+    try {
+      const inputBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+      const img = nativeImage.createFromBuffer(inputBuffer)
+      
+      let outputBuffer, mimeType
+      switch (format.toLowerCase()) {
+        case 'png':
+          outputBuffer = img.toPNG()
+          mimeType = 'image/png'
+          break
+        case 'jpg':
+        case 'jpeg':
+          outputBuffer = img.toJPEG(90)
+          mimeType = 'image/jpeg'
+          break
+        case 'bmp':
+          outputBuffer = img.toBitmap()
+          mimeType = 'image/bmp'
+          break
+        default:
+          outputBuffer = img.toPNG()
+          mimeType = 'image/png'
+      }
+
+      return { buffer: outputBuffer, mimeType }
+    } catch (e) {
+      logError('tools', '图片格式转换失败: ' + e.message, e.stack)
       throw e
     }
   })
