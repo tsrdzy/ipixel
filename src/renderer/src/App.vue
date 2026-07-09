@@ -75,7 +75,7 @@ function closeApp() {
 }
 
 // ===== 更多菜单功能 =====
-const GITHUB_REPO = 'https://github.com/tsrdzy/imodel'
+const GITHUB_REPO = 'https://github.com/tsrdzy/ipixel'
 
 function openGitHubUrl(path) {
   window.open(GITHUB_REPO + path, '_blank')
@@ -134,7 +134,7 @@ async function showAbout() {
 async function checkUpdate() {
   ElMessage.info(t('menu.checkingUpdate'))
   try {
-    const response = await fetch('https://api.github.com/repos/tsrdzy/imodel/releases/latest')
+    const response = await fetch('https://api.github.com/repos/tsrdzy/ipixel/releases/latest')
     if (!response.ok) {
       throw new Error('Network error')
     }

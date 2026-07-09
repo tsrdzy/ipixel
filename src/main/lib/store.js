@@ -3,6 +3,7 @@ import fsp from 'fs/promises'
 import { join } from 'path'
 import { randomUUID, createHash } from 'crypto'
 import { getDB, openDB } from './db.js'
+import { ensureImageShardDirs } from './imageStore.js'
 
 /** 计算文件 SHA256 哈希（流式读取，避免大文件内存溢出） */
 export async function hashFile(filePath) {
@@ -74,7 +75,6 @@ export async function initLibrary(folderPath, name) {
   await ensureShardDirs(folderPath)
 
   // 创建 images 目录及 256 个分片子目录
-  const { ensureImageShardDirs } = await import('./imageStore.js')
   await ensureImageShardDirs(folderPath)
 
   // 打开数据库（会自动创建表）
@@ -108,7 +108,6 @@ export async function isValidLibrary(folderPath) {
 
 /** 确保资源库的 images 分片目录存在（打开旧库时补建） */
 export async function ensureImagesDir(folderPath) {
-  const { ensureImageShardDirs } = await import('./imageStore.js')
   await ensureImageShardDirs(folderPath)
 }
 
