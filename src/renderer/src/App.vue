@@ -92,60 +92,68 @@ const sidebarItems = [
 ]
 
 async function showTutorial() {
-  await ElMessageBox.alert(
-    `<div style="text-align: left; padding: 10px;">
-      <h4 style="margin: 0 0 12px 0;">${t('menu.tutorialTitle')}</h4>
-      <p style="margin: 8px 0;">${t('menu.tutorial1')}</p>
-      <p style="margin: 8px 0;">${t('menu.tutorial2')}</p>
-      <p style="margin: 8px 0;">${t('menu.tutorial3')}</p>
-      <p style="margin: 8px 0;">${t('menu.tutorial4')}</p>
-      <p style="margin: 8px 0;">${t('menu.tutorial5')}</p>
-    </div>`,
-    t('menu.tutorial'),
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: t('common.close'),
-      customClass: 'about-dialog'
-    }
-  )
+  try {
+    await ElMessageBox.alert(
+      `<div style="text-align: left; padding: 10px;">
+        <h4 style="margin: 0 0 12px 0;">${t('menu.tutorialTitle')}</h4>
+        <p style="margin: 8px 0;">${t('menu.tutorial1')}</p>
+        <p style="margin: 8px 0;">${t('menu.tutorial2')}</p>
+        <p style="margin: 8px 0;">${t('menu.tutorial3')}</p>
+        <p style="margin: 8px 0;">${t('menu.tutorial4')}</p>
+        <p style="margin: 8px 0;">${t('menu.tutorial5')}</p>
+      </div>`,
+      t('menu.tutorial'),
+      {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: t('common.close'),
+        customClass: 'about-dialog'
+      }
+    )
+  } catch {
+    // 用户取消
+  }
 }
 
 async function showAbout() {
-  await ElMessageBox.alert(
-    `<div style="text-align: center; padding: 10px;">
-      <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">iPixel</div>
-      <div style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">${t('menu.version')} ${pkg.version}</div>
-      <div style="font-size: 13px; color: var(--text-3); line-height: 1.6;">
-        <p>一个简洁高效的素材资源管理工具，支持3D模型、图片、音频、字体等多种格式的本地化管理。</p>
-        <p style="margin-top: 12px;">${t('menu.license')}</p>
-      </div>
-      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 24px;">
-        <a href="https://qm.qq.com/q/WqXZDSTHoW" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="QQ群">
-          <span style="font-family: 'iconfont';">&#xe882;</span>
-        </a>
-        <a href="https://space.bilibili.com/364755642?spm_id_from=333.1007.0.0" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="B站">
-          <span style="font-family: 'iconfont';">&#xea95;</span>
-        </a>
-        <a href="${GITHUB_REPO}" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="GitHub">
-          <span style="font-family: 'iconfont';">&#xe691;</span>
-        </a>
-        <a href="https://ifdian.net/a/ipixel" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="爱发电">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-        </a>
-        <a href="mailto:420792287@qq.com" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="邮件反馈">
-          <span style="font-family: 'iconfont';">&#xe62e;</span>
-        </a>
-      </div>
-    </div>`,
-    t('menu.about'),
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: t('common.close'),
-      customClass: 'about-dialog'
-    }
-  )
+  try {
+    await ElMessageBox.alert(
+      `<div style="text-align: center; padding: 10px;">
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">iPixel</div>
+        <div style="font-size: 14px; color: var(--text-2); margin-bottom: 16px;">${t('menu.version')} ${pkg.version}</div>
+        <div style="font-size: 13px; color: var(--text-3); line-height: 1.6;">
+          <p>一个简洁高效的素材资源管理工具，支持3D模型、图片、音频、字体等多种格式的本地化管理。</p>
+          <p style="margin-top: 12px;">${t('menu.license')}</p>
+        </div>
+        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 24px;">
+          <a href="https://qm.qq.com/q/WqXZDSTHoW" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="QQ群">
+            <span style="font-family: 'iconfont';">&#xe882;</span>
+          </a>
+          <a href="https://space.bilibili.com/364755642?spm_id_from=333.1007.0.0" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="B站">
+            <span style="font-family: 'iconfont';">&#xea95;</span>
+          </a>
+          <a href="${GITHUB_REPO}" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="GitHub">
+            <span style="font-family: 'iconfont';">&#xe691;</span>
+          </a>
+          <a href="https://ifdian.net/a/ipixel" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="爱发电">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </a>
+          <a href="mailto:420792287@qq.com" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="邮件反馈">
+            <span style="font-family: 'iconfont';">&#xe62e;</span>
+          </a>
+        </div>
+      </div>`,
+      t('menu.about'),
+      {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: t('common.close'),
+        customClass: 'about-dialog'
+      }
+    )
+  } catch {
+    // 用户取消
+  }
 }
 
 

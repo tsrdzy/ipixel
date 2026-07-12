@@ -107,10 +107,11 @@ export default {
     license: 'ライセンス：MIT License'
   },
   settings: {
-    general: '全般',
+    general: '一般',
     appearance: '外観',
     language: '言語',
     theme: 'テーマ',
+    skin: 'スキン',
     dark: 'ダーク',
     light: 'ライト',
     showInTitlebar: 'タイトルバーに表示',

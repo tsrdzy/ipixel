@@ -110,10 +110,11 @@ export default {
     general: 'Allgemein',
     appearance: 'Aussehen',
     language: 'Sprache',
-    theme: 'Design',
+    theme: 'Thema',
+    skin: 'Skin',
     dark: 'Dunkel',
     light: 'Hell',
-    showInTitlebar: 'In der Titelleiste anzeigen',
+    showInTitlebar: 'In Titelleiste anzeigen',
     version: 'Version'
   },
   init: {

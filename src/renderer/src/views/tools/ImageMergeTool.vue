@@ -439,7 +439,7 @@ function onDragEnd() {
 }
 
 .upload-placeholder:hover {
-  border-color: #409eff;
+  border-color: var(--primary);
 }
 
 .upload-icon {
@@ -471,7 +471,7 @@ function onDragEnd() {
 }
 
 .image-item:hover {
-  border-color: #409eff;
+  border-color: var(--primary);
 }
 
 .image-item.dragging {
@@ -542,7 +542,7 @@ function onDragEnd() {
 }
 
 .add-more:hover {
-  border-color: #409eff;
+  border-color: var(--primary);
 }
 
 .add-icon {

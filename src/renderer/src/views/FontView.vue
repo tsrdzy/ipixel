@@ -756,7 +756,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  background: var(--el-color-primary-light-9);
+  background: var(--primary-soft);
   border-radius: 6px;
   border: 1px solid var(--el-color-primary-light-7);
 }
@@ -855,12 +855,11 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 11px;
   color: var(--text-3);
-}
 .selection-box {
   position: absolute;
-  border: 2px dashed var(--el-color-primary);
-  background: rgba(64, 158, 255, 0.15);
+  border: 2px dashed var(--primary);
+  background: var(--primary-soft);
   pointer-events: none;
-  z-index: 100;
+} z-index: 100;
 }
 </style>

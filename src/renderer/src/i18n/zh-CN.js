@@ -112,6 +112,7 @@ export default {
     appearance: '外观',
     language: '语言',
     theme: '主题',
+    skin: '皮肤',
     dark: '暗色',
     light: '亮色',
     showInTitlebar: '在顶部显示',

@@ -9,6 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const showLanguageInTitlebar = ref(true)
   const deviceInfo = ref(null)
   const checkForUpdates = ref(true)
+  const skin = ref('#409EFF')
 
   async function loadDeviceInfo() {
     try {
@@ -43,6 +44,9 @@ export const useSettingsStore = defineStore('settings', () => {
     const savedCheckUpdates = localStorage.getItem('imodel-checkForUpdates')
     if (savedCheckUpdates !== null) checkForUpdates.value = savedCheckUpdates === 'true'
 
+    const savedSkin = localStorage.getItem('imodel-skin')
+    if (savedSkin) skin.value = savedSkin
+
     applyTheme()
   }
 
@@ -50,6 +54,21 @@ export const useSettingsStore = defineStore('settings', () => {
     const root = document.documentElement
     if (isDark.value) root.classList.add('dark')
     else root.classList.remove('dark')
+    applySkin()
+  }
+
+  function applySkin() {
+    const root = document.documentElement
+    root.style.setProperty('--el-color-primary', skin.value)
+    root.style.setProperty('--primary', skin.value)
+    root.style.setProperty('--primary-hover', skin.value)
+    root.style.setProperty('--primary-soft', `${skin.value}20`)
+  }
+
+  function setSkin(color) {
+    skin.value = color
+    localStorage.setItem('imodel-skin', color)
+    applySkin()
   }
 
   function toggleTheme() {
@@ -105,12 +124,16 @@ export const useSettingsStore = defineStore('settings', () => {
     showLanguageInTitlebar,
     deviceInfo,
     checkForUpdates,
+    skin,
     init,
     toggleTheme,
     setShowThemeInTitlebar,
     setShowLanguageInTitlebar,
     setCheckForUpdates,
     loadDeviceInfo,
-    checkUpdate
+    checkUpdate,
+    applyTheme,
+    applySkin,
+    setSkin
   }
 })

@@ -42,6 +42,16 @@ const themes = [
   { value: 'light', label: t('settings.light') }
 ]
 
+const skins = [
+  { value: '#F56C6C', label: '红', name: 'red' },
+  { value: '#E6A23C', label: '橙', name: 'orange' },
+  { value: '#E6E600', label: '黄', name: 'yellow' },
+  { value: '#67C23A', label: '绿', name: 'green' },
+  { value: '#409EFF', label: '蓝', name: 'blue' },
+  { value: '#9B59B6', label: '紫', name: 'purple' },
+  { value: '#909399', label: '灰', name: 'gray' }
+]
+
 const languages = [
   { code: 'zh-CN', label: '中文' },
   { code: 'en-US', label: 'English' },
@@ -112,6 +122,23 @@ function changeLanguage(lang) {
             <el-select v-model="currentTheme" style="width: 100%">
               <el-option v-for="theme in themes" :key="theme.value" :label="theme.label" :value="theme.value" />
             </el-select>
+          </div>
+          <div class="setting-item setting-item-left">
+            <span class="setting-label">{{ t('settings.skin') }}</span>
+            <div class="skin-picker">
+              <div
+                v-for="skinItem in skins"
+                :key="skinItem.value"
+                class="skin-item"
+                :class="{ active: settingsStore.skin === skinItem.value }"
+                :style="{ '--skin-color': skinItem.value }"
+                @click="settingsStore.setSkin(skinItem.value)"
+                :title="skinItem.label"
+              >
+                <div class="skin-color"></div>
+                <span class="skin-label">{{ skinItem.label }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </el-card>
@@ -264,6 +291,54 @@ function changeLanguage(lang) {
 
 .update-badge-warning:hover {
   text-decoration: underline;
+}
+
+.skin-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.setting-item-left {
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+.skin-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.skin-item:hover {
+  background: var(--bg-hover);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.skin-item.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.skin-color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--skin-color);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skin-label {
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 </style>

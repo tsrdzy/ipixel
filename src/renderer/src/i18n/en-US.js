@@ -111,6 +111,7 @@ export default {
     appearance: 'Appearance',
     language: 'Language',
     theme: 'Theme',
+    skin: 'Skin',
     dark: 'Dark',
     light: 'Light',
     showInTitlebar: 'Show in Titlebar',

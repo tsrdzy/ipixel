@@ -111,6 +111,7 @@ export default {
     appearance: 'Apparence',
     language: 'Langue',
     theme: 'Thème',
+    skin: 'Skin',
     dark: 'Sombre',
     light: 'Clair',
     showInTitlebar: 'Afficher dans la barre de titre',

@@ -77,6 +77,8 @@ const api = {
       return base64ToBlobUrl(dataUrl)
     },
     upload: () => ipcRenderer.invoke('images:upload'),
+    overwrite: (existingImage, pendingFile) =>
+      ipcRenderer.invoke('images:overwrite', existingImage, pendingFile),
     batchUpload: () => ipcRenderer.invoke('images:batch-upload'),
     onBatchUploadProgress: (callback) => {
       const handler = (_e, data) => callback(data)
@@ -99,6 +101,8 @@ const api = {
       return base64ToBlobUrl(dataUrl)
     },
     upload: () => ipcRenderer.invoke('audios:upload'),
+    overwrite: (existingAudio, pendingFile) =>
+      ipcRenderer.invoke('audios:overwrite', existingAudio, pendingFile),
     batchUpload: () => ipcRenderer.invoke('audios:batch-upload'),
     save: (meta) => ipcRenderer.invoke('audios:save', meta),
     update: (id, patch) => ipcRenderer.invoke('audios:update', id, patch),
@@ -114,6 +118,8 @@ const api = {
       return base64ToBlobUrl(dataUrl)
     },
     upload: () => ipcRenderer.invoke('fonts:upload'),
+    overwrite: (existingFont, pendingFile) =>
+      ipcRenderer.invoke('fonts:overwrite', existingFont, pendingFile),
     batchUpload: () => ipcRenderer.invoke('fonts:batch-upload'),
     save: (meta) => ipcRenderer.invoke('fonts:save', meta),
     update: (id, patch) => ipcRenderer.invoke('fonts:update', id, patch),

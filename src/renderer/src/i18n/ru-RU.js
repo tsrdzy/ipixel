@@ -111,6 +111,7 @@ export default {
     appearance: 'Внешний вид',
     language: 'Язык',
     theme: 'Тема',
+    skin: 'Скин',
     dark: 'Темная',
     light: 'Светлая',
     showInTitlebar: 'Показать в заголовке',
