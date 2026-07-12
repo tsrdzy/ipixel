@@ -147,8 +147,38 @@ async function selectFile() {
     const result = await window.api.fonts.upload()
     if (!result) return
     if (result.duplicate) {
-      ElMessage.warning(t('font.duplicate'))
-      return
+      const existingName = result.existingFont?.name || result.existingFont?.fileName || t('common.empty')
+      try {
+        await ElMessageBox.confirm(
+          t('upload.confirmDuplicate', { name: existingName }),
+          t('upload.confirmDuplicate'),
+          {
+            confirmButtonText: t('upload.overwrite'),
+            cancelButtonText: t('upload.skip'),
+            type: 'warning',
+            distinguishCancelAndClose: true
+          }
+        )
+      } catch (action) {
+        if (action === 'cancel') {
+          ElMessage.success(t('upload.skip'))
+        }
+        return
+      }
+      try {
+        const overwritten = await window.api.fonts.overwrite(
+          result.existingFont,
+          result.pendingFile
+        )
+        setPendingUpload(overwritten)
+        name.value = overwritten.meta?.fileName
+          ? overwritten.meta.fileName.replace(/\.[^.]+$/, '')
+          : ''
+        return
+      } catch (e) {
+        ElMessage.error(e.message || t('upload.overwrite') + t('common.failed'))
+        return
+      }
     }
     setPendingUpload(result)
     name.value = result.meta?.fileName
@@ -435,6 +465,7 @@ onMounted(() => {
   background: var(--bg-soft);
   border-radius: var(--radius);
   padding: 12px;
+  min-width: 0;
 }
 .info-section :deep(.el-form-item__label) {
   padding: 0 0 10px 0;
@@ -445,6 +476,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+  min-width: 0;
 }
 .info-item {
   display: flex;
@@ -452,6 +484,7 @@ onMounted(() => {
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
+  min-width: 0;
 }
 .info-item:hover {
   background: var(--bg-hover);
@@ -475,6 +508,7 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 .error-alert {
   margin-top: 8px;

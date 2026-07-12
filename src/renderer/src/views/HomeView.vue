@@ -7,7 +7,7 @@ import { useStore } from '../composables/useStore'
 import ModelCard from '../components/ModelCard.vue'
 import ModelViewer from '../components/ModelViewer.vue'
 
-const { state, goUpload, goEdit, switchLibrary, renameLibrary, batchUpload, loadAll, deleteModel, saveSettings } = useStore()
+const { state, goUpload, goEdit, switchLibrary, closeLibrary, renameLibrary, batchUpload, loadAll, deleteModel, saveSettings } = useStore()
 const { t } = useI18n()
 
 const keyword = ref('')
@@ -76,8 +76,13 @@ async function handleAddTag() {
 
 /** 资源库名字下拉菜单命令处理 */
 async function handleLibCommand(cmd) {
-  if (cmd === 'switch') {
-    switchLibrary()
+  if (cmd === 'create') {
+    window.location.hash = '#/select-library?tab=create'
+  } else if (cmd === 'switch') {
+    window.location.hash = '#/select-library?tab=open'
+  } else if (cmd === 'close') {
+    closeLibrary()
+    window.location.hash = '#/select-library'
   } else if (cmd === 'rename') {
     try {
       const { value } = await ElMessageBox.prompt(t('init.libraryName'), t('init.rename'), {
@@ -800,8 +805,10 @@ function closeBatchDialog() {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="rename">{{ t('init.rename') }}</el-dropdown-item>
-              <el-dropdown-item command="switch" divided>{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="create">{{ t('init.create') }}</el-dropdown-item>
+              <el-dropdown-item command="switch">{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="close">{{ t('init.closeLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="rename" divided>{{ t('init.rename') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>

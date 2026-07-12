@@ -27,11 +27,24 @@ export function registerFontIpc() {
       const hash = await hashFile(filePath)
       const existing = getFont(hash)
       if (existing) {
-        return { duplicate: true, existingFont: existing }
+        return { duplicate: true, existingFont: existing, pendingFile: { filePath, fileName, ext, hash } }
       }
 
       const record = await addFont(getLibraryPath(), filePath, hash)
       logUpload('fonts', fileName, ext)
+      return record
+    } catch (e) {
+      logError('fonts', e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('fonts:overwrite', async (_e, existingFont, pendingFile) => {
+    try {
+      await deleteFont(getLibraryPath(), existingFont.id)
+
+      const record = await addFont(getLibraryPath(), pendingFile.filePath, pendingFile.hash)
+      logUpload('fonts', pendingFile.fileName, pendingFile.ext)
       return record
     } catch (e) {
       logError('fonts', e.message, e.stack)

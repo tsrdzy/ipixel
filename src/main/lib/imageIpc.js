@@ -58,11 +58,28 @@ export function registerImageIpc() {
       // 检查重复
       const existing = findImageByHash(hash)
       if (existing) {
-        return { duplicate: true, existingImage: existing }
+        return { duplicate: true, existingImage: existing, pendingFile: { filePath, fileName, ext, hash } }
       }
 
       const record = await addImage(p, filePath, hash)
       logUpload('images', fileName, ext)
+      return { duplicate: false, meta: record.meta }
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
+    }
+  })
+
+  // 覆盖重复图片
+  ipcMain.handle('images:overwrite', async (_e, existingImage, pendingFile) => {
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+
+      await deleteImage(p, existingImage.id)
+
+      const record = await addImage(p, pendingFile.filePath, pendingFile.hash)
+      logUpload('images', pendingFile.fileName, pendingFile.ext)
       return { duplicate: false, meta: record.meta }
     } catch (e) {
       logError('images', e.message, e.stack)
@@ -167,6 +184,8 @@ export function registerImageIpc() {
 
       const record = await addImage(p, tempPath, hash)
       fs.unlinkSync(tempPath)
+
+      commitImage(record.meta)
 
       const ext = fileName.split('.').pop().toLowerCase()
       logUpload('images', fileName, ext)

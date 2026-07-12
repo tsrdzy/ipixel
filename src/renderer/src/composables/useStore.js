@@ -59,6 +59,7 @@ async function createLibrary(folderPath, name) {
   state.models = []
   state.tags = []
   state.view = 'home'
+  window.location.hash = '#/model'
 }
 
 /** 打开列表中的已有资源库 */
@@ -70,6 +71,7 @@ async function openLibrary(folderPath) {
   state.libraries = res.libraries || []
   await loadAll()
   state.view = 'home'
+  window.location.hash = '#/model'
 }
 
 /** 浏览并打开已有资源库（弹窗选择） */
@@ -82,6 +84,7 @@ async function browseAndOpenLibrary() {
   state.libraries = res.libraries || []
   await loadAll()
   state.view = 'home'
+  window.location.hash = '#/model'
 }
 
 /** 从列表中删除资源库记录（不删除磁盘文件） */
@@ -101,6 +104,17 @@ async function removeLibrary(folderPath) {
 
 /** 切换资源库（回到初始化页） */
 function switchLibrary() {
+  state.view = 'init'
+}
+
+/** 关闭当前资源库 */
+async function closeLibrary() {
+  await window.api.library.close()
+  state.initialized = false
+  state.libraryPath = null
+  state.library = null
+  state.models = []
+  state.tags = []
   state.view = 'init'
 }
 
@@ -179,6 +193,7 @@ export function useStore() {
     browseAndOpenLibrary,
     removeLibrary,
     switchLibrary,
+    closeLibrary,
     renameLibrary,
     saveSettings,
     goUpload,

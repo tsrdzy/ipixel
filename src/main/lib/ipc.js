@@ -36,6 +36,7 @@ import {
 import {
   logLibraryCreate,
   logLibraryOpen,
+  logLibraryClose,
   logLibraryDelete,
   logLibraryRename,
   logUpload,
@@ -160,6 +161,18 @@ export function registerIpc() {
       renameLibrary(folderPath, newName)
       logLibraryRename(folderPath, newName)
       return { libraryPath: folderPath, library, libraries: getLibraries() }
+    } catch (e) {
+      logError('library', e.message, e.stack)
+      throw e
+    }
+  })
+
+  // 关闭当前资源库（清空当前路径，不删除磁盘文件）
+  ipcMain.handle('library:close', async () => {
+    try {
+      setLibraryPath(null)
+      logLibraryClose()
+      return { libraryPath: null, libraries: getLibraries() }
     } catch (e) {
       logError('library', e.message, e.stack)
       throw e
@@ -625,9 +638,9 @@ export function registerIpc() {
     }
   })
 
-  ipcMain.handle('logs:export', async () => {
+  ipcMain.handle('logs:export', async (_e, options) => {
     try {
-      return exportLogs()
+      return exportLogs(options)
     } catch (e) {
       logError('logs', e.message, e.stack)
       throw e

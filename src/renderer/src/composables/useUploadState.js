@@ -1,13 +1,22 @@
 import { reactive } from 'vue'
 
+const instances = {}
+
 export function createUploadState(editingKey) {
+  if (instances[editingKey]) {
+    return instances[editingKey]
+  }
+
   const state = reactive({
     view: 'list',
     pendingUpload: null,
     [editingKey]: null
   })
 
-  return {
+  const baseKey = editingKey.replace(/^editing/, '')
+  const methodName = `setEditing${baseKey.charAt(0).toUpperCase() + baseKey.slice(1)}`
+
+  const instance = {
     state,
     setView(view) {
       state.view = view
@@ -17,7 +26,7 @@ export function createUploadState(editingKey) {
       state[editingKey] = null
       state.view = 'upload'
     },
-    [`setEditing${editingKey.charAt(0).toUpperCase() + editingKey.slice(1)}`](item) {
+    [methodName](item) {
       state[editingKey] = item
       state.pendingUpload = null
       state.view = 'upload'
@@ -28,4 +37,7 @@ export function createUploadState(editingKey) {
       state[editingKey] = null
     }
   }
+
+  instances[editingKey] = instance
+  return instance
 }

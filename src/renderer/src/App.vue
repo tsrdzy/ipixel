@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import { useStore } from './composables/useStore'
 import { useSettingsStore } from './stores/settings'
 import { ElMessageBox, ElMessage, ElConfigProvider } from 'element-plus'
-import pkg from '../../../package.json'
+import pkg from '@root/package.json'
 
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
@@ -129,6 +129,11 @@ async function showAbout() {
         <a href="${GITHUB_REPO}" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="GitHub">
           <span style="font-family: 'iconfont';">&#xe691;</span>
         </a>
+        <a href="https://ifdian.net/a/ipixel" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="爱发电">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </a>
         <a href="mailto:420792287@qq.com" target="_blank" style="color: var(--text-2); text-decoration: none; font-size: 24px;" title="邮件反馈">
           <span style="font-family: 'iconfont';">&#xe62e;</span>
         </a>
@@ -162,6 +167,41 @@ function handleMoreCommand(command) {
     case 'logs':
       window.location.hash = '#/logs'
       break
+    case 'switch-library':
+      window.location.hash = '#/select-library'
+      break
+    case 'new-library':
+      window.location.hash = '#/select-library'
+      break
+  }
+}
+
+
+
+async function handleUpdateCheck() {
+  const updateResult = await settingsStore.checkUpdate()
+  if (updateResult && updateResult.hasUpdate) {
+    try {
+      await ElMessageBox.confirm(
+        t('menu.newVersion', { version: updateResult.latestVersion }),
+        t('menu.updateAvailable'),
+        {
+          confirmButtonText: t('menu.download'),
+          cancelButtonText: t('common.cancel'),
+          type: 'success',
+          checkbox: true,
+          checkboxLabel: t('menu.dontRemind'),
+          checkboxValue: false
+        }
+      ).then(async ({ checkboxChecked }) => {
+        if (checkboxChecked) {
+          settingsStore.setCheckForUpdates(false)
+        }
+        window.open(updateResult.releaseUrl, '_blank')
+      })
+    } catch {
+      // 用户取消
+    }
   }
 }
 
@@ -181,6 +221,9 @@ onMounted(async () => {
   removeMaxListener = window.api.windowControl.onMaximizeChange((max) => {
     isMax.value = max
   })
+
+  // 延迟检查更新
+  setTimeout(handleUpdateCheck, 3000)
 })
 
 onBeforeUnmount(() => {
@@ -329,6 +372,19 @@ onBeforeUnmount(() => {
   font-weight: 700;
   letter-spacing: 1.2px;
   color: var(--text-1);
+}
+
+.title-dropdown {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.title-dropdown:hover {
+  background: var(--bg-hover);
 }
 
 /* 中间可拖拽区域（让窗口能拖动） */

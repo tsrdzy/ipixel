@@ -27,11 +27,24 @@ export function registerAudioIpc() {
       const hash = await hashFile(filePath)
       const existing = getAudio(hash)
       if (existing) {
-        return { duplicate: true, existingAudio: existing }
+        return { duplicate: true, existingAudio: existing, pendingFile: { filePath, fileName, ext, hash } }
       }
 
       const record = await addAudio(getLibraryPath(), filePath, hash)
       logUpload('audios', fileName, ext)
+      return record
+    } catch (e) {
+      logError('audios', e.message, e.stack)
+      throw e
+    }
+  })
+
+  ipcMain.handle('audios:overwrite', async (_e, existingAudio, pendingFile) => {
+    try {
+      await deleteAudio(getLibraryPath(), existingAudio.id)
+
+      const record = await addAudio(getLibraryPath(), pendingFile.filePath, pendingFile.hash)
+      logUpload('audios', pendingFile.fileName, pendingFile.ext)
       return record
     } catch (e) {
       logError('audios', e.message, e.stack)

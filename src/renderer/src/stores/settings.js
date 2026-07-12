@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
+import pkg from '@root/package.json'
+
 export const useSettingsStore = defineStore('settings', () => {
   const isDark = ref(true)
   const showThemeInTitlebar = ref(true)
   const showLanguageInTitlebar = ref(true)
   const deviceInfo = ref(null)
+  const checkForUpdates = ref(true)
 
   async function loadDeviceInfo() {
     try {
@@ -37,6 +40,9 @@ export const useSettingsStore = defineStore('settings', () => {
       }
     }
 
+    const savedCheckUpdates = localStorage.getItem('imodel-checkForUpdates')
+    if (savedCheckUpdates !== null) checkForUpdates.value = savedCheckUpdates === 'true'
+
     applyTheme()
   }
 
@@ -62,15 +68,49 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('imodel-showLanguageInTitlebar', val ? 'true' : 'false')
   }
 
+  function setCheckForUpdates(val) {
+    checkForUpdates.value = val
+    localStorage.setItem('imodel-checkForUpdates', val ? 'true' : 'false')
+  }
+
+  async function checkUpdate() {
+    if (!checkForUpdates.value) return null
+
+    try {
+      const response = await fetch('https://api.github.com/repos/tsrdzy/ipixel/releases/latest')
+      if (!response.ok) return null
+
+      const data = await response.json()
+      const latestVersion = (data.tag_name || '1.0.0').replace(/^v/i, '')
+      const currentVersion = pkg.version
+
+      if (latestVersion !== currentVersion) {
+        return {
+          hasUpdate: true,
+          latestVersion,
+          currentVersion,
+          releaseUrl: data.html_url
+        }
+      }
+    } catch (e) {
+      console.error('检查更新失败:', e)
+    }
+
+    return { hasUpdate: false }
+  }
+
   return {
     isDark,
     showThemeInTitlebar,
     showLanguageInTitlebar,
     deviceInfo,
+    checkForUpdates,
     init,
     toggleTheme,
     setShowThemeInTitlebar,
     setShowLanguageInTitlebar,
-    loadDeviceInfo
+    setCheckForUpdates,
+    loadDeviceInfo,
+    checkUpdate
   }
 })

@@ -8,7 +8,7 @@ import { useStore } from '../composables/useStore'
 import { useAudioState } from '../composables/useAudioState'
 
 const router = useRouter()
-const { state, switchLibrary, renameLibrary, saveSettings } = useStore()
+const { state, switchLibrary, closeLibrary, renameLibrary, saveSettings } = useStore()
 const { setPendingUpload, setEditingAudio } = useAudioState()
 const { t } = useI18n()
 
@@ -144,9 +144,13 @@ function formatDuration(sec) {
 }
 
 async function handleLibCommand(cmd) {
-  if (cmd === 'switch') {
-    switchLibrary()
-    router.push('/model')
+  if (cmd === 'create') {
+    router.push('/select-library?tab=create')
+  } else if (cmd === 'switch') {
+    router.push('/select-library?tab=open')
+  } else if (cmd === 'close') {
+    closeLibrary()
+    router.push('/select-library')
   } else if (cmd === 'rename') {
     try {
       const { value } = await ElMessageBox.prompt(t('init.libraryName'), t('init.rename'), {
@@ -634,8 +638,10 @@ onUnmounted(() => {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="rename">{{ t('init.rename') }}</el-dropdown-item>
-              <el-dropdown-item command="switch" divided>{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="create">{{ t('init.create') }}</el-dropdown-item>
+              <el-dropdown-item command="switch">{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="close">{{ t('init.closeLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="rename" divided>{{ t('init.rename') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>

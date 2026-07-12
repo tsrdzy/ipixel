@@ -7,7 +7,7 @@ import { useStore } from '../composables/useStore'
 import { useImageState } from '../composables/useImageState'
 
 const router = useRouter()
-const { state, switchLibrary, renameLibrary, saveSettings } = useStore()
+const { state, switchLibrary, renameLibrary, saveSettings, closeLibrary } = useStore()
 const { setPendingUpload, setEditingImage } = useImageState()
 const { t } = useI18n()
 
@@ -189,9 +189,13 @@ function formatTime(time) {
 
 // ====== 资源库名字下拉菜单命令处理（与 HomeView 一致） ======
 async function handleLibCommand(cmd) {
-  if (cmd === 'switch') {
-    switchLibrary()
-    router.push('/model')
+  if (cmd === 'create') {
+    router.push('/select-library?tab=create')
+  } else if (cmd === 'switch') {
+    router.push('/select-library?tab=open')
+  } else if (cmd === 'close') {
+    closeLibrary()
+    router.push('/select-library')
   } else if (cmd === 'rename') {
     try {
       const { value } = await ElMessageBox.prompt(t('init.libraryName'), t('init.rename'), {
@@ -559,8 +563,10 @@ onMounted(() => {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="rename">{{ t('init.rename') }}</el-dropdown-item>
-              <el-dropdown-item command="switch" divided>{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="create">{{ t('init.create') }}</el-dropdown-item>
+              <el-dropdown-item command="switch">{{ t('init.switchLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="close">{{ t('init.closeLibrary') }}</el-dropdown-item>
+              <el-dropdown-item command="rename" divided>{{ t('init.rename') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>

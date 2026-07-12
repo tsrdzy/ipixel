@@ -788,6 +788,7 @@ onMounted(async () => {
   background: var(--bg-soft);
   border-radius: var(--radius);
   padding: 12px;
+  min-width: 0;
 }
 .info-section :deep(.el-form-item__label) {
   padding: 0 0 10px 0;
@@ -798,6 +799,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+  min-width: 0;
 }
 .info-item {
   display: flex;
@@ -805,6 +807,7 @@ onMounted(async () => {
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
+  min-width: 0;
 }
 .info-item:hover {
   background: var(--bg-hover);
@@ -828,6 +831,7 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 .files-section :deep(.el-form-item__content) {
   flex-direction: column;

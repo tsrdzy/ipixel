@@ -7,7 +7,7 @@ import { registerImageIpc } from './lib/imageIpc.js'
 import { registerAudioIpc } from './lib/audioIpc.js'
 import { registerFontIpc } from './lib/fontIpc.js'
 import { closeDB } from './lib/db.js'
-import { initDeviceInfo, logLibraryClose } from './lib/logger.js'
+import { initDeviceInfo, logLibraryClose, logError } from './lib/logger.js'
 
 /** 主窗口引用，供窗口控制 IPC 使用 */
 let mainWindowRef = null
@@ -82,6 +82,36 @@ app.whenReady().then(async () => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+
+    window.webContents.on('crashed', (event, killed) => {
+      logError('renderer', `渲染进程崩溃${killed ? '(被杀死)' : ''}`, event.stack || '')
+    })
+
+    window.webContents.on('gpu-process-crashed', (event, killed) => {
+      logError('renderer', `GPU进程崩溃${killed ? '(被杀死)' : ''}`, event.stack || '')
+    })
+
+    window.webContents.on('preload-error', (event, preloadPath, error) => {
+      logError('renderer', `Preload错误: ${preloadPath} - ${error.message}`, error.stack || '')
+    })
+
+    window.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      if (level === 3) {
+        logError('renderer', `控制台错误: ${message}`, `${sourceId}:${line}`)
+      }
+    })
+  })
+
+  process.on('uncaughtException', (err) => {
+    logError('main', `未捕获异常: ${err.message}`, err.stack || '')
+    console.error('[UncaughtException]', err)
+  })
+
+  process.on('unhandledRejection', (reason, promise) => {
+    const message = reason instanceof Error ? reason.message : String(reason)
+    const stack = reason instanceof Error ? reason.stack : ''
+    logError('main', `未处理的Promise拒绝: ${message}`, stack || '')
+    console.error('[UnhandledRejection]', reason)
   })
 
   registerIpc()

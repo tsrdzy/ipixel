@@ -7,6 +7,7 @@ import ImageMergeTool from './tools/ImageMergeTool.vue'
 import ImageCompressTool from './tools/ImageCompressTool.vue'
 import IcoGeneratorTool from './tools/IcoGeneratorTool.vue'
 import ImageFormatTool from './tools/ImageFormatTool.vue'
+import GifGeneratorTool from './tools/GifGeneratorTool.vue'
 
 const { t } = useI18n()
 
@@ -25,12 +26,13 @@ const categories = [
 
 const tools = {
   image: [
-    { id: 'split', name: t('tools.imageSplit'), description: t('tools.imageSplitDesc'), lastUpdate: '2026-07-08' },
-    { id: 'merge', name: t('tools.imageMerge'), description: t('tools.imageMergeDesc'), lastUpdate: '2026-07-08' },
-    { id: 'compress', name: t('tools.imageCompress'), description: t('tools.imageCompressDesc'), lastUpdate: '2026-07-09' },
-    { id: 'format', name: t('tools.imageFormat'), description: t('tools.imageFormatDesc'), lastUpdate: '2026-07-10' },
-    { id: 'ico', name: t('tools.icoGenerator'), description: t('tools.icoGeneratorDesc'), lastUpdate: '2026-07-10' }
-  ],
+      { id: 'split', name: t('tools.imageSplit'), description: t('tools.imageSplitDesc'), lastUpdate: '2026-07-08' },
+      { id: 'merge', name: t('tools.imageMerge'), description: t('tools.imageMergeDesc'), lastUpdate: '2026-07-08' },
+      { id: 'compress', name: t('tools.imageCompress'), description: t('tools.imageCompressDesc'), lastUpdate: '2026-07-09' },
+      { id: 'format', name: t('tools.imageFormat'), description: t('tools.imageFormatDesc'), lastUpdate: '2026-07-10' },
+      { id: 'ico', name: t('tools.icoGenerator'), description: t('tools.icoGeneratorDesc'), lastUpdate: '2026-07-10' },
+      { id: 'gif', name: t('tools.gifGenerator'), description: t('tools.gifGeneratorDesc'), lastUpdate: '2026-07-12' }
+    ],
   video: [],
   audio: [],
   font: [],
@@ -79,7 +81,7 @@ function closeDialog() {
           <div class="tool-info">
             <h3 class="tool-name">{{ tool.name }}</h3>
             <p class="tool-desc">{{ tool.description }}</p>
-            <span class="tool-update">{{ t('tools.lastUpdate') }}: {{ tool.lastUpdate }}</span>
+            <span class="tool-update">{{ tool.lastUpdate }}</span>
           </div>
         </div>
       </div>
@@ -101,6 +103,7 @@ function closeDialog() {
       <ImageCompressTool v-if="selectedTool?.id === 'compress'" />
       <ImageFormatTool v-if="selectedTool?.id === 'format'" />
       <IcoGeneratorTool v-if="selectedTool?.id === 'ico'" />
+      <GifGeneratorTool v-if="selectedTool?.id === 'gif'" />
     </ElDialog>
   </div>
 </template>

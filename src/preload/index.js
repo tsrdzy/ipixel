@@ -28,6 +28,7 @@ const api = {
     selectFolder: () => ipcRenderer.invoke('library:select-folder'),
     create: (folderPath, name) => ipcRenderer.invoke('library:create', folderPath, name),
     open: (folderPath) => ipcRenderer.invoke('library:open', folderPath),
+    close: () => ipcRenderer.invoke('library:close'),
     remove: (folderPath) => ipcRenderer.invoke('library:remove', folderPath),
     rename: (folderPath, newName) => ipcRenderer.invoke('library:rename', folderPath, newName),
     selectAndOpen: () => ipcRenderer.invoke('library:select-and-open'),

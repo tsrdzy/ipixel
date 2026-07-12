@@ -96,8 +96,10 @@ export default {
     updateAvailable: '发现新版本',
     newVersion: '发现新版本 {version}，是否前往下载？',
     download: '下载',
-    latestVersion: '当前已是最新版本',
+    latestVersion: '当前已是最新版本!',
+    newVersionAvailable: '有新版本!',
     checkUpdateFailed: '检查更新失败，请检查网络连接',
+    dontRemind: '不再提醒',
     about: '关于 iModel',
     version: '版本',
     settings: '设置',
@@ -113,10 +115,15 @@ export default {
     dark: '暗色',
     light: '亮色',
     showInTitlebar: '在顶部显示',
-    version: '版本'
+    version: '版本',
+    support: '支持我们',
+    supportTitle: '爱发电支持',
+    supportDesc: '如果喜欢这个项目，欢迎支持一下',
+    supportBtn: '去支持'
   },
   init: {
     title: '资源库管理',
+    selectLibrary: '选择资源库',
     create: '创建资源库',
     open: '打开资源库',
     recent: '最近使用',
@@ -131,7 +138,8 @@ export default {
     confirmDelete: '确定要删除这个资源库吗？此操作不可撤销。',
     rename: '重命名',
     deleteLibrary: '删除资源库',
-    switchLibrary: '切换资源库'
+    switchLibrary: '切换资源库',
+    closeLibrary: '关闭资源库'
   },
   home: {
     searchPlaceholder: '搜索模型名称...',
@@ -223,6 +231,15 @@ export default {
     imageFormatDesc: '将图片转换为PNG、JPG、BMP、GIF等格式',
     icoGenerator: 'ICO生成器',
     icoGeneratorDesc: '将图片转换为ICO格式图标',
+    gifGenerator: 'GIF生成器',
+    gifGeneratorDesc: '将多张图片合成GIF动图',
+    gifSettings: 'GIF设置',
+    gifPreview: 'GIF预览',
+    width: '宽度',
+    height: '高度',
+    frameInterval: '帧间隔',
+    quality: '画质',
+    generate: '生成',
     selectImages: '选择图片',
     imageCount: '图片数量',
     outputSize: '输出尺寸',
@@ -287,6 +304,8 @@ export default {
     overwrite: '覆盖',
     skip: '跳过',
     exportCount: '已导出 {count} 个文件到：{dir}',
-    loadModel: '加载模型'
+    loadModel: '加载模型',
+    addTag: '添加标签',
+    removeTag: '移除标签'
   }
 }

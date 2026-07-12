@@ -25,7 +25,19 @@ const pageSize = ref(50)
 const filterType = ref('')
 const filterModule = ref('')
 const filterStatus = ref('')
+const filterTimeRange = ref('')
 const deviceLoading = ref(false)
+
+const timeRangeOptions = [
+  { label: '1小时内', value: '1h' },
+  { label: '一天内', value: '1d' },
+  { label: '3天内', value: '3d' },
+  { label: '一周内', value: '1w' },
+  { label: '一个月内', value: '1m' },
+  { label: '半年内', value: '6m' },
+  { label: '一年内', value: '1y' },
+  { label: '所有', value: '' }
+]
 
 const operationTypes = {
   'create': '创建',
@@ -63,15 +75,31 @@ const statusColors = {
   'partial': 'warning'
 }
 
+function getStartDate(range) {
+  const now = new Date()
+  switch (range) {
+    case '1h': return new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+    case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+    case '3d': return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
+    case '1w': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    case '1m': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    case '6m': return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString()
+    case '1y': return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    default: return null
+  }
+}
+
 async function loadLogs() {
   loading.value = true
   try {
+    const startDate = getStartDate(filterTimeRange.value)
     const result = await window.api.logs.query({
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
       type: filterType.value || undefined,
       module: filterModule.value || undefined,
-      status: filterStatus.value || undefined
+      status: filterStatus.value || undefined,
+      startDate
     })
     logs.value = result.logs
     total.value = result.count
@@ -84,7 +112,13 @@ async function loadLogs() {
 
 async function exportLogs() {
   try {
-    const allLogs = await window.api.logs.export()
+    const startDate = getStartDate(filterTimeRange.value)
+    const allLogs = await window.api.logs.export({
+      type: filterType.value || undefined,
+      module: filterModule.value || undefined,
+      status: filterStatus.value || undefined,
+      startDate
+    })
     const content = JSON.stringify(allLogs, null, 2)
     const blob = new Blob([content], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -162,7 +196,7 @@ async function loadDeviceInfo() {
   }
 }
 
-watch([filterType, filterModule, filterStatus], () => {
+watch([filterType, filterModule, filterStatus, filterTimeRange], () => {
   currentPage.value = 1
   loadLogs()
 })
@@ -192,8 +226,24 @@ onMounted(() => {
             <span>{{ (settingsStore.deviceInfo.cpu?.brand || settingsStore.deviceInfo.cpu?.manufacturer || '-') + (settingsStore.deviceInfo.cpu?.speed ? ' ' + settingsStore.deviceInfo.cpu.speed : '') }}</span>
           </div>
           <div class="device-info-item">
+            <span class="device-info-label">主板:</span>
+            <span>{{ settingsStore.deviceInfo.board?.manufacturer || '-' }} {{ settingsStore.deviceInfo.board?.model || '' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">GPU:</span>
+            <span>{{ settingsStore.deviceInfo.graphics?.[0]?.model || settingsStore.deviceInfo.graphics?.[0]?.vendor || '-' }}</span>
+          </div>
+          <div class="device-info-item">
             <span class="device-info-label">内存:</span>
             <span>{{ settingsStore.deviceInfo.memory ? (settingsStore.deviceInfo.memory.total / 1024 / 1024 / 1024).toFixed(2) + ' GB' : '-' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">固态硬盘:</span>
+            <span>{{ settingsStore.deviceInfo.disk?.filter(d => d.isSSD).length || 0 }} 个</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">固态大小:</span>
+            <span>{{ settingsStore.deviceInfo.ssdSize ? (settingsStore.deviceInfo.ssdSize / 1024 / 1024 / 1024).toFixed(2) + ' GB' : '-' }}</span>
           </div>
           <div class="device-info-item">
             <span class="device-info-label">系统:</span>
@@ -204,8 +254,12 @@ onMounted(() => {
             <span>{{ settingsStore.deviceInfo.os?.release || '-' }}</span>
           </div>
           <div class="device-info-item">
-            <span class="device-info-label">主机名:</span>
-            <span>{{ settingsStore.deviceInfo.os?.hostname || '-' }}</span>
+            <span class="device-info-label">本机IP:</span>
+            <span>{{ settingsStore.deviceInfo.network?.[0]?.ip4 || '-' }}</span>
+          </div>
+          <div class="device-info-item">
+            <span class="device-info-label">架构:</span>
+            <span>{{ settingsStore.deviceInfo.os?.arch || '-' }}</span>
           </div>
         </div>
       </div>
@@ -231,9 +285,17 @@ onMounted(() => {
           v-model="filterStatus"
           placeholder="状态"
           clearable
-          style="width: 100px; margin-right: auto;"
+          style="width: 100px; margin-right: 12px;"
         >
           <ElOption v-for="(label, value) in statusMap" :key="value" :label="label" :value="value" />
+        </ElSelect>
+        <ElSelect
+          v-model="filterTimeRange"
+          placeholder="时间范围"
+          clearable
+          style="width: 120px; margin-right: auto;"
+        >
+          <ElOption v-for="opt in timeRangeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </ElSelect>
         <ElButton type="primary" @click="exportLogs" style="margin-right: 8px;">导出日志</ElButton>
         <ElButton type="danger" @click="clearLogs">清空日志</ElButton>

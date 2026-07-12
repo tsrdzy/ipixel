@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -9,9 +9,11 @@ const settingsStore = useSettingsStore()
 
 import pkg from '../../../../package.json'
 const version = computed(() => pkg.version)
+const latestVersion = ref('')
+const hasUpdate = ref(false)
+const releaseUrl = ref('')
 
 async function checkUpdate() {
-  ElMessage.info(t('menu.checkingUpdate'))
   try {
     const response = await fetch('https://api.github.com/repos/tsrdzy/ipixel/releases/latest')
     if (!response.ok) {
@@ -19,31 +21,21 @@ async function checkUpdate() {
     }
     const data = await response.json()
     
-    const latestVersion = (data.tag_name || '1.0.0').replace(/^v/i, '')
-    const currentVersion = version.value
-    
-    if (latestVersion !== currentVersion) {
-      try {
-        await ElMessageBox.confirm(
-          t('menu.newVersion', { version: latestVersion }),
-          t('menu.updateAvailable'),
-          {
-            confirmButtonText: t('menu.download'),
-            cancelButtonText: t('common.cancel'),
-            type: 'success'
-          }
-        )
-        window.open(data.html_url, '_blank')
-      } catch {
-        // 用户取消
-      }
-    } else {
-      ElMessage.success(t('menu.latestVersion'))
-    }
+    latestVersion.value = (data.tag_name || '1.0.0').replace(/^v/i, '')
+    hasUpdate.value = latestVersion.value !== version.value
+    releaseUrl.value = data.html_url || ''
   } catch (e) {
-    ElMessage.error(t('menu.checkUpdateFailed'))
+    console.error('检查更新失败:', e)
   }
 }
+
+function openReleaseUrl() {
+  if (releaseUrl.value) {
+    window.open(releaseUrl.value, '_blank')
+  }
+}
+
+checkUpdate()
 
 const themes = [
   { value: 'dark', label: t('settings.dark') },
@@ -88,10 +80,15 @@ function changeLanguage(lang) {
         <div class="settings-section">
           <div class="setting-item">
             <span class="setting-label">{{ t('settings.version') }}</span>
-            <span class="setting-value">v{{ version }}</span>
+            <div class="version-info">
+              <span class="setting-value">v{{ version }}</span>
+              <span v-if="hasUpdate" class="update-badge update-badge-warning" @click="openReleaseUrl">{{ t('menu.newVersionAvailable', { version: latestVersion }) }}</span>
+              <span v-else-if="latestVersion" class="update-badge update-badge-success">{{ t('menu.latestVersion') }}</span>
+            </div>
           </div>
-          <div style="text-align: right; margin-top: 8px;">
-            <el-button type="primary" size="small" @click="checkUpdate">{{ t('menu.checkUpdate') }}</el-button>
+          <div class="setting-item">
+            <span class="setting-label">{{ t('menu.checkUpdate') }}</span>
+            <el-switch v-model="settingsStore.checkForUpdates" @change="(val) => settingsStore.setCheckForUpdates(val)" />
           </div>
         </div>
       </el-card>
@@ -133,9 +130,12 @@ function changeLanguage(lang) {
           </div>
         </template>
         <div class="settings-section">
-          <el-select v-model="locale" style="width: 100%" @change="changeLanguage">
-            <el-option v-for="lang in languages" :key="lang.code" :label="lang.label" :value="lang.code" />
-          </el-select>
+          <div class="setting-item">
+            <span class="setting-label">{{ t('settings.language') }}</span>
+            <el-select v-model="locale" style="width: 100%" @change="changeLanguage">
+              <el-option v-for="lang in languages" :key="lang.code" :label="lang.label" :value="lang.code" />
+            </el-select>
+          </div>
         </div>
       </el-card>
     </div>
@@ -203,5 +203,67 @@ function changeLanguage(lang) {
   width: 100%;
 }
 
+.support-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.support-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 12px;
+}
+
+.support-info {
+  flex: 1;
+}
+
+.support-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.support-desc {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+.version-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.update-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.update-badge-success {
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
+}
+
+.update-badge-warning {
+  color: #f56c6c;
+  background: rgba(245, 108, 108, 0.1);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.update-badge-warning:hover {
+  text-decoration: underline;
+}
 
 </style>

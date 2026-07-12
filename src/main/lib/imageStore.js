@@ -3,6 +3,7 @@ import fsp from 'fs/promises'
 import { join } from 'path'
 import { createHash } from 'crypto'
 import { nativeImage } from 'electron'
+import { getPalette } from 'colorthief'
 import { getDB } from './db.js'
 
 /** 计算文件 SHA256 */
@@ -90,36 +91,61 @@ function nearestPaletteColor(r, g, b) {
 
 /**
  * 使用 nativeImage 解码图片，提取尺寸和主/辅色
- * 使用 32 色调色板量化
+ * 使用 colorthief 获取主要颜色
  */
 export async function analyzeImage(filePath) {
   const img = nativeImage.createFromPath(filePath)
   const { width, height } = img.getSize()
 
-  const small = img.resize({ width: 100, height: 100 })
-  const bitmapData = small.getBitmap()
-  const { data, width: bmpWidth, height: bmpHeight } = bitmapData
+  let dominantColor = ''
+  let secondaryColor = ''
 
-  const colorCount = new Map()
-  for (let y = 0; y < bmpHeight; y++) {
-    for (let x = 0; x < bmpWidth; x++) {
-      const offset = y * bmpWidth * 4 + x * 4
-      const b = data[offset]
-      const g = data[offset + 1]
-      const r = data[offset + 2]
-      const a = data[offset + 3]
-      if (a < 50) continue
-      const name = nearestPaletteColor(r, g, b)
-      colorCount.set(name, (colorCount.get(name) || 0) + 1)
+  try {
+    const palette = await getPalette(filePath, 5)
+    
+    if (palette && palette.length > 0) {
+      dominantColor = palette[0] ? `rgb(${palette[0].r},${palette[0].g},${palette[0].b})` : ''
+      secondaryColor = palette[1] ? `rgb(${palette[1].r},${palette[1].g},${palette[1].b})` : ''
+    }
+  } catch (e) {
+    console.warn('ColorThief failed:', e.message)
+    
+    try {
+      const small = img.resize({ width: 100, height: 100 })
+      const bitmapData = small.toBitmap()
+      const { data, width: bmpWidth, height: bmpHeight } = bitmapData
+
+      const colorCount = new Map()
+      for (let y = 0; y < bmpHeight; y++) {
+        for (let x = 0; x < bmpWidth; x++) {
+          const offset = y * bmpWidth * 4 + x * 4
+          const b = data[offset]
+          const g = data[offset + 1]
+          const r = data[offset + 2]
+          const a = data[offset + 3]
+          if (a < 50) continue
+          const name = nearestPaletteColor(r, g, b)
+          colorCount.set(name, (colorCount.get(name) || 0) + 1)
+        }
+      }
+
+      const sorted = [...colorCount.entries()].sort((a, b) => b[1] - a[1])
+      if (sorted.length > 0) {
+        dominantColor = sorted[0]?.[0] || 'gray'
+        secondaryColor = sorted[1]?.[0] || 'gray'
+      }
+    } catch (bitmapErr) {
+      console.warn('Bitmap analysis also failed:', bitmapErr.message)
+      dominantColor = 'gray'
+      secondaryColor = 'gray'
     }
   }
 
-  const sorted = [...colorCount.entries()].sort((a, b) => b[1] - a[1])
   return {
     width,
     height,
-    dominantColor: sorted[0]?.[0] || 'gray',
-    secondaryColor: sorted[1]?.[0] || 'gray'
+    dominantColor,
+    secondaryColor
   }
 }
 
@@ -314,11 +340,12 @@ export async function saveSplitResult(folderPath, file) {
 
   const info = await analyzeImage(destPath)
 
+  const ext = fileName.split('.').pop().toLowerCase()
   const meta = {
     id,
     name: '',
     fileName,
-    fileType: 'png',
+    fileType: ext,
     fileSize: stat.size,
     width: info.width,
     height: info.height,

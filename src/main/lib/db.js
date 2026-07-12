@@ -8,11 +8,35 @@ let db = null
 export function openDB(libraryPath) {
   closeDB()
   const dbPath = join(libraryPath, 'imodel.db')
-  db = new Database(dbPath)
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  createTables()
-  return db
+  
+  try {
+    const walPath = dbPath + '-wal'
+    const shmPath = dbPath + '-shm'
+    if (fs.existsSync(walPath)) {
+      fs.unlinkSync(walPath)
+    }
+    if (fs.existsSync(shmPath)) {
+      fs.unlinkSync(shmPath)
+    }
+  } catch (e) {
+    console.warn('清理临时文件失败:', e)
+  }
+  
+  try {
+    db = new Database(dbPath, {
+      readonly: false,
+      fileMustExist: false
+    })
+    db.pragma('journal_mode = DELETE')
+    db.pragma('foreign_keys = ON')
+    db.pragma('synchronous = OFF')
+    createTables()
+    return db
+  } catch (e) {
+    console.error('打开数据库失败:', e)
+    db = null
+    throw e
+  }
 }
 
 /** 创建表结构 */

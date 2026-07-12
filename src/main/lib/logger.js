@@ -5,13 +5,30 @@ let deviceInfo = null
 
 export async function initDeviceInfo() {
   try {
-    const [osInfo, cpuInfo, memoryInfo, graphicsInfo, diskInfo] = await Promise.all([
+    const [osInfo, cpuInfo, memoryInfo, graphicsInfo, diskInfo, networkInfo] = await Promise.all([
       si.osInfo(),
       si.cpu(),
       si.mem(),
       si.graphics(),
-      si.diskLayout()
+      si.diskLayout(),
+      si.networkInterfaces()
     ])
+
+    let boardInfo = {}
+    try {
+      if (typeof si.system === 'function') {
+        const sysInfo = await si.system()
+        boardInfo = {
+          manufacturer: sysInfo.manufacturer || '',
+          model: sysInfo.model || '',
+          version: sysInfo.version || '',
+          serial: sysInfo.serial || ''
+        }
+      }
+    } catch (e) {
+      console.warn('[Logger] Failed to get board info:', e)
+    }
+
     deviceInfo = {
       os: {
         platform: osInfo.platform,
@@ -39,8 +56,21 @@ export async function initDeviceInfo() {
       disk: diskInfo.map(d => ({
         name: d.name,
         type: d.type,
-        size: d.size
-      }))
+        size: d.size,
+        isSSD: d.type === 'SSD' || d.type === 'NVMe' || (d.name && d.name.toLowerCase().includes('ssd'))
+      })),
+      ssdSize: diskInfo
+        .filter(d => d.type === 'SSD' || d.type === 'NVMe' || (d.name && d.name.toLowerCase().includes('ssd')))
+        .reduce((sum, d) => sum + (d.size || 0), 0),
+      board: boardInfo,
+      network: networkInfo
+        .filter(n => n.ip4 && n.ip4 !== '127.0.0.1' && !n.ip4.startsWith('169.254.'))
+        .map(n => ({
+          interface: n.iface || n.name,
+          ip4: n.ip4,
+          ip6: n.ip6,
+          mac: n.mac
+        }))
     }
   } catch (e) {
     console.error('[Logger] Failed to get device info:', e)
@@ -211,12 +241,44 @@ export function getLogsCount(options = {}) {
   }
 }
 
-export function exportLogs() {
+export function exportLogs(options = {}) {
   const db = getDB()
   if (!db) return []
   
+  const { type, module, status, startDate, endDate } = options
+  
+  let query = 'SELECT * FROM operation_logs WHERE 1=1'
+  const params = []
+  
+  if (type) {
+    query += ' AND operation_type = ?'
+    params.push(type)
+  }
+  
+  if (module) {
+    query += ' AND module = ?'
+    params.push(module)
+  }
+  
+  if (status) {
+    query += ' AND status = ?'
+    params.push(status)
+  }
+  
+  if (startDate) {
+    query += ' AND timestamp >= ?'
+    params.push(startDate)
+  }
+  
+  if (endDate) {
+    query += ' AND timestamp <= ?'
+    params.push(endDate)
+  }
+  
+  query += ' ORDER BY timestamp DESC'
+  
   try {
-    const rows = db.prepare('SELECT * FROM operation_logs ORDER BY timestamp DESC').all()
+    const rows = db.prepare(query).all(...params)
     return rows.map(row => ({
       ...row,
       detail: row.detail ? JSON.parse(row.detail) : row.detail,
