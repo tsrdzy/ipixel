@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useStore } from '../composables/useStore'
 import { useImageState } from '../composables/useImageState'
+import { useDragUpload } from '../composables/useDragUpload'
 
 const router = useRouter()
 const { state, switchLibrary, renameLibrary, saveSettings, closeLibrary } = useStore()
@@ -253,6 +254,64 @@ async function handleBatchUpload() {
     ElMessage.error(e.message || t('common.failed'))
   }
 }
+
+// ====== 拖拽上传 ======
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga']
+
+const dragBatchVisible = ref(false)
+const dragBatchProgress = ref(0)
+const dragBatchCurrent = ref(0)
+const dragBatchTotal = ref(0)
+const dragBatchFileName = ref('')
+
+async function handleDragUpload(filePaths) {
+  dragBatchVisible.value = true
+  dragBatchProgress.value = 0
+  dragBatchCurrent.value = 0
+  dragBatchTotal.value = 0
+  dragBatchFileName.value = ''
+
+  let unsubscribe = null
+  unsubscribe = window.api.images.onBatchUploadProgress((data) => {
+    dragBatchProgress.value = Math.round((data.current / data.total) * 100)
+    dragBatchCurrent.value = data.current
+    dragBatchTotal.value = data.total
+    dragBatchFileName.value = data.fileName
+  })
+
+  try {
+    const result = await window.api.images.batchUploadByPaths(filePaths)
+    if (!result) return
+    if (result.invalidFormat) {
+      ElMessage.warning(t('common.invalidFormat', { formats: IMAGE_EXTS.join(', ').toUpperCase() }))
+      return
+    }
+    let success = 0
+    let dup = 0
+    for (const item of result.items) {
+      if (item.duplicate) {
+        dup++
+      } else if (item.meta) {
+        await window.api.images.save(item.meta)
+        success++
+      }
+    }
+    ElMessage.success(`${t('common.success')}: ${success}, ${t('image.duplicate')}: ${dup}`)
+    await loadImages()
+  } catch (e) {
+    console.error('拖拽上传失败:', e)
+    ElMessage.error(e.message || t('common.failed'))
+  } finally {
+    if (unsubscribe) unsubscribe()
+    dragBatchVisible.value = false
+  }
+}
+
+const { isDragOver, onDragEnter, onDragOver, onDragLeave, onDrop } = useDragUpload({
+  extensions: IMAGE_EXTS,
+  typeLabel: t('sidebar.image'),
+  onUpload: handleDragUpload
+})
 
 function isSelected(id) {
   const idStr = String(id)
@@ -710,7 +769,11 @@ onMounted(() => {
     <main class="content"
           ref="contentRef"
           @click="handleContentClick"
-          @mousedown="handleMouseDown">
+          @mousedown="handleMouseDown"
+          @dragenter="onDragEnter"
+          @dragover="onDragOver"
+          @dragleave="onDragLeave"
+          @drop="onDrop">
       <div v-if="filteredImages.length" class="grid">
         <div
           v-for="img in filteredImages"
@@ -762,6 +825,25 @@ onMounted(() => {
         }"
       />
     </main>
+
+    <el-dialog v-model="dragBatchVisible" title="拖拽上传中" width="480px" :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <el-progress :percentage="dragBatchProgress" :stroke-width="8" />
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-3);">
+          <span>{{ dragBatchFileName }}</span>
+          <span>{{ dragBatchCurrent }} / {{ dragBatchTotal }}</span>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 拖拽上传蒙版 -->
+    <div v-if="isDragOver" class="drag-overlay">
+      <div class="drag-overlay-content">
+        <i class="iconfont icon-cloud-upload"></i>
+        <p>{{ t('common.dropHere') }}</p>
+        <p class="drag-overlay-formats">PNG · JPG · JPEG · BMP · WEBP · GIF · TGA</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -963,5 +1045,39 @@ onMounted(() => {
   background: var(--primary-soft);
   pointer-events: none;
   z-index: 100;
+}
+
+/* 拖拽上传蒙版 */
+.drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.drag-overlay-content {
+  text-align: center;
+  color: #fff;
+}
+.drag-overlay-content .iconfont {
+  font-size: 64px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 16px;
+}
+.drag-overlay-content p {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.drag-overlay-formats {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  margin-top: 8px !important;
+  opacity: 0.7;
 }
 </style>

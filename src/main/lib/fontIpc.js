@@ -1,5 +1,6 @@
 import { ipcMain, dialog } from 'electron'
 import { join } from 'path'
+import fs from 'fs'
 import { getLibraryPath } from './config.js'
 import { hashFile, addFont, commitFont, updateFont, deleteFont, loadFonts, getFont, readFontFile, exportFont } from './fontStore.js'
 import { logUpload, logBatchUpload, logDelete, logExport, logError } from './logger.js'
@@ -68,6 +69,79 @@ export function registerFontIpc() {
           items.push({ duplicate: true, existingFont: existing })
         } else {
           const added = await addFont(getLibraryPath(), filePath, hash)
+          items.push(added)
+        }
+      }
+
+      const successCount = items.filter(item => !item.duplicate).length
+      const failedCount = items.filter(item => item.error).length || 0
+      logBatchUpload('fonts', items.length, successCount, failedCount)
+
+      return { total: items.length, items }
+    } catch (e) {
+      logError('fonts', e.message, e.stack)
+      throw e
+    }
+  })
+
+  // 通过路径批量上传字体（拖拽上传）
+  const FONT_EXTS = ['ttf', 'otf', 'woff', 'woff2']
+  ipcMain.handle('fonts:batch-upload-by-paths', async (event, inputPaths) => {
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+
+      const filePaths = []
+      function collectFiles(dir) {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+          if (entry.isDirectory()) {
+            collectFiles(fullPath)
+          } else {
+            const ext = entry.name.split('.').pop().toLowerCase()
+            if (FONT_EXTS.includes(ext)) {
+              filePaths.push(fullPath)
+            }
+          }
+        }
+      }
+      for (const fp of inputPaths) {
+        try {
+          const stat = fs.statSync(fp)
+          if (stat.isDirectory()) {
+            collectFiles(fp)
+          } else {
+            const ext = fp.split('.').pop().toLowerCase()
+            if (FONT_EXTS.includes(ext)) {
+              filePaths.push(fp)
+            }
+          }
+        } catch {
+          // 忽略无效路径
+        }
+      }
+
+      if (filePaths.length === 0) return { total: 0, items: [], invalidFormat: true }
+
+      const items = []
+      for (let i = 0; i < filePaths.length; i++) {
+        const filePath = filePaths[i]
+        const fileName = filePath.split(/[\\/]/).pop()
+
+        event.sender.send('fonts:batch-upload:progress', {
+          current: i + 1,
+          total: filePaths.length,
+          fileName,
+          stage: 'importing'
+        })
+
+        const hash = await hashFile(filePath)
+        const existing = getFont(hash)
+        if (existing) {
+          items.push({ duplicate: true, existingFont: existing })
+        } else {
+          const added = await addFont(p, filePath, hash)
           items.push(added)
         }
       }

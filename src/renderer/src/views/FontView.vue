@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useStore } from '../composables/useStore';
 import { useFontState } from '../composables/useFontState';
+import { useDragUpload } from '../composables/useDragUpload';
 const router = useRouter();
 const { state, switchLibrary, closeLibrary, renameLibrary, saveSettings } = useStore();
 const { setPendingUpload, setEditingFont } = useFontState();
@@ -194,7 +195,7 @@ async function handleBatchUpload() {
  success++;
  }
  }
- ElMessage.success(`${t('common.success')}: ${success}, ${t('image.duplicate')}: ${dup}`);
+ ElMessage.success(`${t('common.success')}: ${success}, ${t('font.duplicate')}: ${dup}`);
  await loadFonts();
  }
  catch (e) {
@@ -202,6 +203,50 @@ async function handleBatchUpload() {
  ElMessage.error(e.message || t('common.failed'));
  }
 }
+
+// ====== 拖拽上传 ======
+const FONT_EXTS = ['ttf', 'otf', 'woff', 'woff2'];
+
+const dragBatchVisible = ref(false);
+
+async function handleDragUpload(filePaths) {
+ dragBatchVisible.value = true;
+ try {
+ const result = await window.api.fonts.batchUploadByPaths(filePaths);
+ if (!result)
+ return;
+ if (result.invalidFormat) {
+ ElMessage.warning(t('common.invalidFormat', { formats: FONT_EXTS.join(', ').toUpperCase() }));
+ return;
+ }
+ let success = 0;
+ let dup = 0;
+ for (const item of result.items) {
+ if (item.duplicate) {
+ dup++;
+ }
+ else if (item.meta) {
+ await window.api.fonts.save(item.meta);
+ success++;
+ }
+ }
+ ElMessage.success(`${t('common.success')}: ${success}, ${t('font.duplicate')}: ${dup}`);
+ await loadFonts();
+ }
+ catch (e) {
+ console.error('拖拽上传失败:', e);
+ ElMessage.error(e.message || t('common.failed'));
+ }
+ finally {
+ dragBatchVisible.value = false;
+ }
+}
+
+const { isDragOver, onDragEnter, onDragOver, onDragLeave, onDrop } = useDragUpload({
+ extensions: FONT_EXTS,
+ typeLabel: t('sidebar.font'),
+ onUpload: handleDragUpload
+});
 function handleUploadCommand(cmd) {
  if (cmd === 'single')
  handleUpload();
@@ -622,7 +667,11 @@ onMounted(() => {
     <main class="content"
           ref="contentRef"
           @click="handleContentClick"
-          @mousedown="handleMouseDown">
+          @mousedown="handleMouseDown"
+          @dragenter="onDragEnter"
+          @dragover="onDragOver"
+          @dragleave="onDragLeave"
+          @drop="onDrop">
       <div v-if="filteredFonts.length" class="grid">
         <div
           v-for="font in filteredFonts"
@@ -675,6 +724,22 @@ onMounted(() => {
         }"
       />
     </main>
+
+    <el-dialog v-model="dragBatchVisible" title="拖拽上传中" width="480px" :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px;">
+        <i class="iconfont icon-sync is-loading" style="font-size: 24px; color: var(--primary);"></i>
+        <span style="font-size: 14px; color: var(--text-2);">正在上传...</span>
+      </div>
+    </el-dialog>
+
+    <!-- 拖拽上传蒙版 -->
+    <div v-if="isDragOver" class="drag-overlay">
+      <div class="drag-overlay-content">
+        <i class="iconfont icon-cloud-upload"></i>
+        <p>{{ t('common.dropHere') }}</p>
+        <p class="drag-overlay-formats">TTF · OTF · WOFF · WOFF2</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -861,5 +926,39 @@ onMounted(() => {
   background: var(--primary-soft);
   pointer-events: none;
 } z-index: 100;
+}
+
+/* 拖拽上传蒙版 */
+.drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.drag-overlay-content {
+  text-align: center;
+  color: #fff;
+}
+.drag-overlay-content .iconfont {
+  font-size: 64px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 16px;
+}
+.drag-overlay-content p {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.drag-overlay-formats {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  margin-top: 8px !important;
+  opacity: 0.7;
 }
 </style>

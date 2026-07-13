@@ -158,7 +158,95 @@ export function registerImageIpc() {
     }
   })
 
-  // 保存图片元数据到数据库
+  // 通过路径批量上传图片（拖拽上传）
+  const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'bmp', 'webp', 'gif', 'tga']
+  ipcMain.handle('images:batch-upload-by-paths', async (event, inputPaths) => {
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+
+      // 展开文件夹
+      const filePaths = []
+      function collectFiles(dir) {
+        const entries = fs.readdirSync(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+          if (entry.isDirectory()) {
+            collectFiles(fullPath)
+          } else {
+            const ext = entry.name.split('.').pop().toLowerCase()
+            if (IMAGE_EXTS.includes(ext)) {
+              filePaths.push(fullPath)
+            }
+          }
+        }
+      }
+      for (const fp of inputPaths) {
+        try {
+          const stat = fs.statSync(fp)
+          if (stat.isDirectory()) {
+            collectFiles(fp)
+          } else {
+            const ext = fp.split('.').pop().toLowerCase()
+            if (IMAGE_EXTS.includes(ext)) {
+              filePaths.push(fp)
+            }
+          }
+        } catch {
+          // 忽略无效路径
+        }
+      }
+
+      if (filePaths.length === 0) return { total: 0, items: [], invalidFormat: true }
+
+      const total = filePaths.length
+      const items = []
+      const batchHashes = new Set()
+
+      for (let i = 0; i < filePaths.length; i++) {
+        const filePath = filePaths[i]
+        const fileName = filePath.split(/[\\/]/).pop()
+
+        event.sender.send('images:batch-upload:progress', {
+          current: i + 1,
+          total,
+          fileName,
+          stage: 'importing'
+        })
+
+        try {
+          const hash = await hashFile(filePath)
+
+          if (batchHashes.has(hash)) {
+            items.push({ skipped: true, fileName, message: '批次内重复' })
+            continue
+          }
+
+          const existing = findImageByHash(hash)
+          if (existing) {
+            items.push({ duplicate: true, existingImage: existing, fileName })
+            batchHashes.add(hash)
+            continue
+          }
+
+          batchHashes.add(hash)
+          const record = await addImage(p, filePath, hash)
+          items.push({ duplicate: false, meta: record.meta })
+        } catch (e) {
+          items.push({ error: true, fileName, message: e.message || '导入失败' })
+        }
+      }
+
+      const successCount = items.filter(item => !item.duplicate && !item.skipped && !item.error).length
+      const failedCount = items.filter(item => item.error).length
+      logBatchUpload('images', total, successCount, failedCount)
+
+      return { total, items }
+    } catch (e) {
+      logError('images', e.message, e.stack)
+      throw e
+    }
+  })
   ipcMain.handle('images:save', async (_e, meta) => {
     const safeMeta = JSON.parse(JSON.stringify(meta))
     return commitImage(safeMeta)

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 function base64ToBlobUrl(base64) {
@@ -46,9 +46,11 @@ const api = {
   models: {
     list: () => ipcRenderer.invoke('models:list'),
     upload: () => ipcRenderer.invoke('models:upload'),
+    uploadByPath: (filePath) => ipcRenderer.invoke('models:upload-by-path', filePath),
     overwrite: (existingModel, pendingFile) =>
       ipcRenderer.invoke('models:overwrite', existingModel, pendingFile),
     batchUpload: () => ipcRenderer.invoke('models:batch-upload'),
+    batchUploadByPaths: (filePaths) => ipcRenderer.invoke('models:batch-upload-by-paths', filePaths),
     onBatchUploadProgress: (callback) => {
       const handler = (_e, data) => callback(data)
       ipcRenderer.on('batch-upload:progress', handler)
@@ -80,6 +82,7 @@ const api = {
     overwrite: (existingImage, pendingFile) =>
       ipcRenderer.invoke('images:overwrite', existingImage, pendingFile),
     batchUpload: () => ipcRenderer.invoke('images:batch-upload'),
+    batchUploadByPaths: (filePaths) => ipcRenderer.invoke('images:batch-upload-by-paths', filePaths),
     onBatchUploadProgress: (callback) => {
       const handler = (_e, data) => callback(data)
       ipcRenderer.on('images:batch-upload:progress', handler)
@@ -104,6 +107,7 @@ const api = {
     overwrite: (existingAudio, pendingFile) =>
       ipcRenderer.invoke('audios:overwrite', existingAudio, pendingFile),
     batchUpload: () => ipcRenderer.invoke('audios:batch-upload'),
+    batchUploadByPaths: (filePaths) => ipcRenderer.invoke('audios:batch-upload-by-paths', filePaths),
     save: (meta) => ipcRenderer.invoke('audios:save', meta),
     update: (id, patch) => ipcRenderer.invoke('audios:update', id, patch),
     delete: (id) => ipcRenderer.invoke('audios:delete', id),
@@ -121,6 +125,7 @@ const api = {
     overwrite: (existingFont, pendingFile) =>
       ipcRenderer.invoke('fonts:overwrite', existingFont, pendingFile),
     batchUpload: () => ipcRenderer.invoke('fonts:batch-upload'),
+    batchUploadByPaths: (filePaths) => ipcRenderer.invoke('fonts:batch-upload-by-paths', filePaths),
     save: (meta) => ipcRenderer.invoke('fonts:save', meta),
     update: (id, patch) => ipcRenderer.invoke('fonts:update', id, patch),
     delete: (id) => ipcRenderer.invoke('fonts:delete', id),
@@ -154,7 +159,10 @@ const api = {
   tools: {
     convertToIco: (arrayBuffer) => ipcRenderer.invoke('tools:convertToIco', arrayBuffer),
     convertImageFormat: (arrayBuffer, format) => ipcRenderer.invoke('tools:convertImageFormat', arrayBuffer, format)
-  }
+  },
+
+  // ====== 拖拽文件路径获取 ======
+  getPathForFile: (file) => webUtils.getPathForFile(file)
 }
 
 if (process.contextIsolated) {

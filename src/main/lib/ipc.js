@@ -304,7 +304,49 @@ export function registerIpc() {
     }
   })
 
-  // 覆盖模型：删除旧模型，添加新模型
+  // 通过路径上传单个模型（拖拽上传到上传页面）
+  ipcMain.handle('models:upload-by-path', async (_e, sourcePath) => {
+    try {
+      const p = getLibraryPath()
+      if (!p) throw new Error('未设置资源库')
+
+      const ext = sourcePath.split('.').pop().toLowerCase()
+      const mainName = sourcePath.split(/[\\/]/).pop()
+      const baseName = mainName.replace(/\.[^.]+$/, '')
+
+      const hash = await hashFile(sourcePath)
+      const existing = findModelByHash(hash)
+      if (existing) {
+        return {
+          duplicate: true,
+          existingModel: existing,
+          pendingFile: { path: sourcePath, name: mainName, ext, hash, defaultName: baseName }
+        }
+      }
+
+      const files = [{ path: sourcePath, name: mainName, role: 'main' }]
+      const record = await addModel(p, files, ext, hash)
+      const mainFile = await readModelFile(p, record.id, record.fileName)
+
+      logUpload('models', mainName, ext)
+
+      return {
+        duplicate: false,
+        id: record.id,
+        fileName: record.fileName,
+        fileType: record.meta.fileType,
+        fileSize: record.meta.fileSize,
+        files: record.files,
+        uploadTime: record.meta.uploadTime,
+        dataBase64: mainFile.toString('base64'),
+        auxFiles: [],
+        defaultName: baseName
+      }
+    } catch (e) {
+      logError('models', e.message, e.stack)
+      throw e
+    }
+  })
   ipcMain.handle('models:overwrite', async (_e, existingModel, pendingFile) => {
     const p = getLibraryPath()
     if (!p) throw new Error('未设置资源库')
@@ -422,7 +464,116 @@ export function registerIpc() {
     return { total, items }
   })
 
-  // 为已上传的模型添加辅助文件
+  // 通过路径批量上传模型（拖拽上传）
+  const MODEL_EXTS = ['glb', 'gltf', 'obj', 'stl', 'json', 'fbx']
+  ipcMain.handle('models:batch-upload-by-paths', async (event, inputPaths) => {
+    const p = getLibraryPath()
+    if (!p) throw new Error('未设置资源库')
+
+    // 展开文件夹，收集所有符合条件的文件
+    const filePaths = []
+    function collectFiles(dir) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          collectFiles(fullPath)
+        } else {
+          const ext = entry.name.split('.').pop().toLowerCase()
+          if (MODEL_EXTS.includes(ext)) {
+            filePaths.push(fullPath)
+          }
+        }
+      }
+    }
+    for (const fp of inputPaths) {
+      try {
+        const stat = fs.statSync(fp)
+        if (stat.isDirectory()) {
+          collectFiles(fp)
+        } else {
+          const ext = fp.split('.').pop().toLowerCase()
+          if (MODEL_EXTS.includes(ext)) {
+            filePaths.push(fp)
+          }
+        }
+      } catch {
+        // 忽略无效路径
+      }
+    }
+
+    if (filePaths.length === 0) return { total: 0, items: [], invalidFormat: true }
+
+    const total = filePaths.length
+    const items = []
+    const existingModels = loadModels()
+    const hashToModel = new Map()
+    for (const m of existingModels) {
+      if (m.id) hashToModel.set(m.id, m)
+    }
+    const batchHashes = new Set()
+
+    for (let i = 0; i < filePaths.length; i++) {
+      const sourcePath = filePaths[i]
+      const mainName = sourcePath.split(/[\\/]/).pop()
+      const ext = sourcePath.split('.').pop().toLowerCase()
+      const baseName = mainName.replace(/\.[^.]+$/, '')
+
+      event.sender.send('batch-upload:progress', {
+        current: i + 1,
+        total,
+        fileName: mainName,
+        stage: 'copying'
+      })
+
+      try {
+        const hash = await hashFile(sourcePath)
+
+        if (batchHashes.has(hash)) {
+          items.push({ skipped: true, fileName: mainName, defaultName: baseName, message: '批次内重复' })
+          continue
+        }
+
+        const existingInLib = hashToModel.get(hash)
+        if (existingInLib) {
+          items.push({
+            duplicate: true,
+            existingModel: existingInLib,
+            pendingFile: { path: sourcePath, name: mainName, ext, hash, defaultName: baseName },
+            fileName: mainName,
+            defaultName: baseName
+          })
+          batchHashes.add(hash)
+          continue
+        }
+
+        batchHashes.add(hash)
+        const fileArr = [{ path: sourcePath, name: mainName, role: 'main' }]
+        const record = await addModel(p, fileArr, ext, hash)
+        const mainFile = await readModelFile(p, record.id, record.fileName)
+
+        items.push({
+          duplicate: false,
+          id: record.id,
+          fileName: record.fileName,
+          fileType: record.meta.fileType,
+          fileSize: record.meta.fileSize,
+          files: record.files,
+          uploadTime: record.meta.uploadTime,
+          dataBase64: mainFile.toString('base64'),
+          defaultName: baseName
+        })
+      } catch (e) {
+        items.push({ error: true, fileName: mainName, defaultName: baseName, message: e.message || '处理失败' })
+      }
+    }
+
+    const successCount = items.filter(item => !item.duplicate && !item.skipped && !item.error).length
+    const failedCount = items.filter(item => item.error).length
+    logBatchUpload('models', total, successCount, failedCount)
+
+    return { total, items }
+  })
   ipcMain.handle('models:add-aux-file', async (_e, modelId, role) => {
     const p = getLibraryPath()
     if (!p) throw new Error('未设置资源库')

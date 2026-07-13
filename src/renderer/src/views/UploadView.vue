@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
+import { useDragUpload } from '../composables/useDragUpload'
 import ModelViewer from '../components/ModelViewer.vue'
 import TagInput from '../components/TagInput.vue'
 
@@ -243,6 +244,80 @@ async function selectFile() {
     loadingModel.value = false
   }
 }
+
+// ===== 拖拽上传 =====
+const UPLOAD_MODEL_EXTS = ['glb', 'gltf', 'obj', 'stl', 'json', 'fbx']
+
+async function handleDragUpload(filePaths) {
+  // 只取第一个文件
+  const filePath = filePaths[0]
+  if (!filePath) return
+
+  const ext = filePath.split('.').pop().toLowerCase()
+  if (!UPLOAD_MODEL_EXTS.includes(ext)) {
+    ElMessage.warning(t('common.invalidFormat', { formats: UPLOAD_MODEL_EXTS.join(', ').toUpperCase() }))
+    return
+  }
+
+  // 如果已有模型正在编辑，不允许拖拽
+  if (isEdit.value) return
+
+  errorMsg.value = ''
+  loadingModel.value = true
+  try {
+    const data = await window.api.models.uploadByPath(filePath)
+    if (!data) {
+      loadingModel.value = false
+      return
+    }
+
+    if (data.duplicate) {
+      loadingModel.value = false
+      const existingName = data.existingModel?.name || data.existingModel?.fileName || t('common.empty')
+      try {
+        await ElMessageBox.confirm(
+          t('upload.confirmDuplicate', { name: existingName }),
+          t('upload.confirmDuplicate'),
+          {
+            confirmButtonText: t('upload.overwrite'),
+            cancelButtonText: t('upload.skip'),
+            type: 'warning',
+            distinguishCancelAndClose: true
+          }
+        )
+      } catch (action) {
+        if (action === 'cancel') {
+          showToast(t('upload.skip'))
+        }
+        return
+      }
+      loadingModel.value = true
+      try {
+        const overwritten = await window.api.models.overwrite(data.existingModel, data.pendingFile)
+        applyUploadData(overwritten)
+      } catch (e) {
+        errorMsg.value = e.message || t('upload.overwrite') + t('common.failed')
+        showToast(errorMsg.value, 'error')
+      } finally {
+        loadingModel.value = false
+      }
+      return
+    }
+
+    applyUploadData(data)
+  } catch (e) {
+    errorMsg.value = e.message || t('common.upload') + t('common.failed')
+    showToast(errorMsg.value, 'error')
+  } finally {
+    loadingModel.value = false
+  }
+}
+
+const { isDragOver: isDragOverUpload, onDragEnter: onUploadDragEnter, onDragOver: onUploadDragOver, onDragLeave: onUploadDragLeave, onDrop: onUploadDrop } = useDragUpload({
+  extensions: UPLOAD_MODEL_EXTS,
+  typeLabel: '3D模型',
+  onUpload: handleDragUpload
+})
 
 /** 将上传/覆盖返回的数据应用到组件状态 */
 function applyUploadData(data) {
@@ -484,7 +559,12 @@ onMounted(async () => {
 
     <div class="body">
       <div class="viewer-panel">
-        <div class="viewer-container">
+        <div class="viewer-container"
+          @dragenter="onUploadDragEnter"
+          @dragover="onUploadDragOver"
+          @dragleave="onUploadDragLeave"
+          @drop="onUploadDrop"
+        >
           <ModelViewer
             v-if="buffer"
             ref="viewerRef"
@@ -498,10 +578,15 @@ onMounted(async () => {
             <i class="iconfont icon-sync is-loading loading-icon"></i>
             <p>{{ t('common.loading') }}...</p>
           </div>
-          <div v-else class="viewer-empty" @click="selectFile">
+          <div v-else class="viewer-empty" :class="{ 'drag-active': isDragOverUpload }" @click="selectFile">
             <el-empty :description="t('upload.selectModel')">
               <p class="formats">{{ t('upload.formats') }}</p>
             </el-empty>
+          </div>
+          <!-- 拖拽蒙版 -->
+          <div v-if="isDragOverUpload" class="viewer-drag-overlay">
+            <i class="iconfont icon-cloud-upload"></i>
+            <p>{{ t('common.dropHere') }}</p>
           </div>
         </div>
         <div class="viewer-tools" v-if="buffer">
@@ -684,6 +769,34 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s;
+}
+.viewer-empty.drag-active {
+  background: var(--primary-soft);
+  border-radius: var(--radius-md);
+}
+.viewer-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  pointer-events: none;
+  z-index: 10;
+}
+.viewer-drag-overlay .iconfont {
+  font-size: 64px;
+  color: var(--primary);
+}
+.viewer-drag-overlay p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
 }
 .viewer-loading,
 .form-loading {

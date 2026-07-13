@@ -55,6 +55,9 @@ export default {
     success: 'Success',
     loadFailed: 'Load failed',
     uploadSuccess: 'Upload success',
+    dropHere: 'Release to upload',
+    invalidFormat: 'Invalid format, only {formats} supported',
+    dragUploadProgress: 'Uploading {current}/{total}',
     theme: {
       dark: 'Dark',
       light: 'Light',
@@ -273,7 +276,7 @@ export default {
     editModel: 'Edit Model',
     uploadModel: 'Upload Model',
     exportTitle: 'Export model to specified location',
-    selectModel: 'Click to select 3D model file',
+    selectModel: 'Click or drag 3D model file',
     formats: 'Supports GLB / GLTF / OBJ / STL / JSON / FBX',
     saveCover: 'Save Cover',
     resetView: 'Reset View',

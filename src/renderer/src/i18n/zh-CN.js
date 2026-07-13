@@ -55,6 +55,9 @@ export default {
     success: '成功',
     loadFailed: '加载失败',
     uploadSuccess: '上传成功',
+    dropHere: '松开鼠标以上传',
+    invalidFormat: '格式不正确，仅支持 {formats}',
+    dragUploadProgress: '正在上传 {current}/{total}',
     theme: {
       dark: '暗色',
       light: '亮色',
@@ -280,7 +283,7 @@ export default {
     editModel: '编辑模型',
     uploadModel: '上传模型',
     exportTitle: '导出模型到指定位置',
-    selectModel: '点击选择 3D 模型文件',
+    selectModel: '点击或拖拽 3D 模型文件',
     formats: '支持 GLB / GLTF / OBJ / STL / JSON / FBX',
     saveCover: '保存封面',
     resetView: '重置视角',

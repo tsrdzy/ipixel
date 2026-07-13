@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useStore } from '../composables/useStore'
+import { useDragUpload } from '../composables/useDragUpload'
 import ModelCard from '../components/ModelCard.vue'
 import ModelViewer from '../components/ModelViewer.vue'
 
@@ -792,6 +793,163 @@ function closeBatchDialog() {
   batchStage.value = 'idle'
   batchViewerVisible.value = false
 }
+
+// ===== 拖拽上传 =====
+const MODEL_EXTS = ['glb', 'gltf', 'obj', 'stl', 'json', 'fbx']
+
+async function handleDragUpload(filePaths) {
+  batchVisible.value = true
+  batchStage.value = 'copying'
+  batchProgress.value = 0
+  batchCurrent.value = 0
+  batchTotal.value = 0
+  batchFileName.value = ''
+  batchResult.value = null
+
+  let unsubscribe = null
+  unsubscribe = window.api.models.onBatchUploadProgress((data) => {
+    batchCurrent.value = data.current
+    batchTotal.value = data.total
+    batchFileName.value = data.fileName
+    if (data.total > 0) {
+      batchProgress.value = Math.round((data.current / data.total) * 40)
+    }
+  })
+
+  try {
+    const res = await window.api.models.batchUploadByPaths(filePaths)
+    if (unsubscribe) unsubscribe()
+
+    if (res.invalidFormat) {
+      ElMessage.warning(t('common.invalidFormat', { formats: MODEL_EXTS.join(', ').toUpperCase() }))
+      batchVisible.value = false
+      batchStage.value = 'idle'
+      return
+    }
+
+    if (!res || res.total === 0) {
+      batchVisible.value = false
+      batchStage.value = 'idle'
+      return
+    }
+
+    const normalItems = res.items.filter((it) => !it.error && !it.duplicate && !it.skipped)
+    const duplicateItems = res.items.filter((it) => it.duplicate)
+    const errorItems = res.items.filter((it) => it.error)
+
+    let overwriteDuplicates = false
+    if (duplicateItems.length > 0) {
+      batchStage.value = 'confirming'
+      try {
+        await ElMessageBox.confirm(
+          `发现 ${duplicateItems.length} 个重复模型，是否覆盖已有模型？\n覆盖将删除旧模型及其封面、标签等信息。`,
+          '发现重复模型',
+          { confirmButtonText: '全部覆盖', cancelButtonText: '全部跳过', type: 'warning' }
+        )
+        overwriteDuplicates = true
+      } catch {
+        overwriteDuplicates = false
+      }
+    }
+
+    batchStage.value = 'rendering'
+    const processItems = [...normalItems]
+    const results = []
+
+    if (overwriteDuplicates) {
+      for (const dup of duplicateItems) {
+        try {
+          const overwritten = await window.api.models.overwrite(dup.existingModel, dup.pendingFile)
+          processItems.push(overwritten)
+        } catch (e) {
+          results.push({ name: dup.fileName, success: false, message: e.message })
+        }
+      }
+    }
+
+    const total = processItems.length
+    for (let i = 0; i < processItems.length; i++) {
+      const item = processItems[i]
+      batchProgress.value = 40 + Math.round((i / Math.max(total, 1)) * 60)
+      batchFileName.value = item.fileName || item.defaultName || ''
+
+      let cover = null
+      let dims = { x: 0, y: 0, z: 0 }
+      let animCount = 0
+
+      try {
+        const rendered = await renderModelForCover(item.dataBase64, item.fileType)
+        cover = rendered.cover
+        dims = rendered.dimensions
+        animCount = rendered.animationCount
+      } catch (e) {
+        console.warn('[DragUpload] 封面生成失败:', item.fileName, e)
+      }
+
+      // 关闭隐藏 viewer 节省资源
+      batchViewerVisible.value = false
+      currentBatchBuffer.value = null
+
+      try {
+        // 保存封面
+        let coverField = null
+        if (cover) {
+          await window.api.models.saveImage(String(item.id), 'cover', cover)
+          coverField = 'cover.png'
+        }
+
+        // 提交模型
+        const meta = {
+          id: item.id,
+          name: item.defaultName || '',
+          description: '',
+          fileName: String(item.fileName),
+          fileType: String(item.fileType),
+          fileSize: Number(item.fileSize),
+          files: JSON.parse(JSON.stringify(item.files)),
+          dimensions: {
+            x: Number(dims.x) || 0,
+            y: Number(dims.y) || 0,
+            z: Number(dims.z) || 0
+          },
+          animationCount: Number(animCount) || 0,
+          uploadTime: String(item.uploadTime),
+          cover: coverField,
+          viewParams: null,
+          tags: []
+        }
+        await window.api.models.save(meta)
+        results.push({ name: item.defaultName || item.fileName, success: true, hasCover: !!cover })
+      } catch (e) {
+        results.push({ name: item.defaultName || item.fileName, success: false, message: e.message })
+      }
+    }
+
+    batchResult.value = {
+      results,
+      success: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
+      duplicates: duplicateItems.length,
+      errors: errorItems.length
+    }
+
+    batchStage.value = 'done'
+    batchProgress.value = 100
+    await loadAll()
+  } catch (e) {
+    if (unsubscribe) unsubscribe()
+    ElMessage.error(e.message || '拖拽上传失败')
+    batchVisible.value = false
+    batchStage.value = 'idle'
+    batchViewerVisible.value = false
+  }
+}
+
+const { isDragOver: isDragOverModel, isUploading: isDragUploading, onDragEnter: onModelDragEnter, onDragOver: onModelDragOver, onDragLeave: onModelDragLeave, onDrop: onModelDrop } = useDragUpload({
+  extensions: MODEL_EXTS,
+  typeLabel: '3D模型',
+  onUpload: handleDragUpload
+})
 </script>
 
 <template>
@@ -936,7 +1094,11 @@ function closeBatchDialog() {
     <main class="content"
           ref="contentRef"
           @click="handleContentClick"
-          @mousedown="handleMouseDown">
+          @mousedown="handleMouseDown"
+          @dragenter="onModelDragEnter"
+          @dragover="onModelDragOver"
+          @dragleave="onModelDragLeave"
+          @drop="onModelDrop">
       <div v-if="filteredModels.length" class="grid">
         <ModelCard
           v-for="m in filteredModels"
@@ -966,7 +1128,14 @@ function closeBatchDialog() {
       />
     </main>
 
-    <!-- 批量上传进度弹窗 -->
+    <!-- 拖拽上传蒙版 -->
+    <div v-if="isDragOverModel" class="drag-overlay">
+      <div class="drag-overlay-content">
+        <i class="iconfont icon-cloud-upload"></i>
+        <p>{{ t('common.dropHere') }}</p>
+        <p class="drag-overlay-formats">GLB · GLTF · OBJ · STL · FBX</p>
+      </div>
+    </div>
     <el-dialog
       v-model="batchVisible"
       :title="batchStage === 'done' ? '批量上传完成' : (batchStage === 'rendering' ? '正在生成封面' : batchStage === 'confirming' ? '正在确认重复项' : '正在复制文件')"
@@ -1208,6 +1377,40 @@ function closeBatchDialog() {
   pointer-events: none;
   z-index: -1;
   opacity: 0;
+}
+
+/* 拖拽上传蒙版 */
+.drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.drag-overlay-content {
+  text-align: center;
+  color: #fff;
+}
+.drag-overlay-content .iconfont {
+  font-size: 64px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 16px;
+}
+.drag-overlay-content p {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.drag-overlay-formats {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  margin-top: 8px !important;
+  opacity: 0.7;
 }
 </style>
 
