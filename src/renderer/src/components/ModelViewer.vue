@@ -767,7 +767,7 @@ defineExpose({ captureThumbnail, getViewParams, resetView })
         @click="toggleAutoRotate"
         title="自动旋转"
       >
-        <i class="iconfont icon-dashboard"></i>
+        <i class="iconfont" aria-hidden="true">&#xe64c;</i>
       </el-button>
       <el-button
         class="ctrl-btn"
@@ -776,7 +776,7 @@ defineExpose({ captureThumbnail, getViewParams, resetView })
         @click="toggleFloor"
         title="显示/隐藏地板"
       >
-        <i class="iconfont icon-menu"></i>
+        <i class="iconfont" aria-hidden="true">&#xe853;</i>
       </el-button>
     </div>
 

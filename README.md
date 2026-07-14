@@ -1,75 +1,49 @@
 # ipixel
 
-基于 Electron + Vue 3 开发的本地资源管理工具，帮助设计师和开发者高效管理本地3D模型、图片、音频和字体资源。
+<div align="right">
+  <a href="#english">English</a> | <a href="#中文">中文</a>
+</div>
 
-## 功能对比
+## 软件介绍
+iPixel 是一款专注于本地素材管理的桌面应用，为设计师、创作者和开发者提供高效、安全的数字资源管理解决方案。支持图片、音频、字体、3D模型等多种素材类型，数据本地存储，保护隐私安全。
 
-| | 模型资源库 | 图片资源库 | 音频资源库 | 字体资源库 |
-|---|---|---|---|---|
-| 功能 | 单个上传、批量上传、重复检测、拖拽旋转视角、自定义封面、辅助文件管理 | 单个上传、批量上传、颜色筛选、图片分割 | 单个上传、批量上传、波形播放、音量控制、倍速播放、循环播放 | 单个上传、批量上传、字体预览 |
-| 支持格式 | GLB、GLTF、OBJ、STL、JSON、FBX | PNG、JPG、JPEG、BMP、WebP、GIF、TGA | MP3、WAV、OGG、FLAC、M4A | TTF、OTF、WOFF、WOFF2 |
+## 图片预览
+![alt text](README/image.png)
 
-## 工具
+![alt text](README/image-1.png)
 
-| 工具名称 | 描述 |
-|---|---|
-| 图片分割工具 | 自动或手动分割精灵图，支持背景色过滤、无用区域过滤 |
-| 图片合并工具 | 支持水平、垂直、网格三种合并模式，可自定义间距和背景色 |
+## 适用人群
 
-## 数据储存方式
+设计师、艺术家、影音设计工作者、内容创作者、游戏开发者、UI/UX 设计师等需要管理大量数字素材的专业人士。
 
-所有数据本地存储，隐私安全。
+## 产品特点
+
+- 每种素材类型提供专属的预览和管理功能
+- 图片资源库，模型资源库，字体资源库，音频资源库独立分模块储存，更快定位整理资源
+- 标签系统，快速标记和检索
+- 自定义显示字段，按需展示素材信息
+- 详细信息面板，展示文件元数据
+- 支持按名称、标签、格式等维度筛选
+- 快速定位目标素材
+- 深色/浅色主题切换，适配不同使用场景
+- 多语言支持
+- 自定义显示字段，个性化界面布局
+- 完整的操作日志记录，支持详情查看
+- 设备信息监控，一键查看 CPU、内存、系统版本等信息
+- 所有数据存储在本地，无需联网即可使用
+- 不收集用户数据，高度重视隐私保护
+
+## 支持格式
+
+图片	PNG、JPG、JPEG、BMP、WebP、GIF、TGA
+音频	MP3, WAV, OGG, FLAC, AAC, M4A
+字体	TTF, OTF, WOFF, WOFF2
+模型	GLB、GLTF、OBJ、STL、JSON、FBX
 
 - 元数据：使用 SQLite 数据库（imodel.db）存储资源元信息
 - 文件存储：按 SHA256 哈希值分片存储在 models/XX/ 和 images/XX/ 目录下（XX 为哈希前两位，00-ff）
 - 资源ID：使用文件 SHA256 哈希值确保唯一性
 - 资源库配置：library.json 存储资源库基本信息
-
-## 项目目录
-
-```
-ipixel/
-├── src/
-│   ├── main/                      # 主进程代码
-│   │   ├── index.js               # 主进程入口
-│   │   ├── lib/                   # 主进程模块
-│   │   │   ├── db.js              # 数据库操作
-│   │   │   ├── store.js           # 模型资源存储
-│   │   │   ├── imageStore.js      # 图片资源存储
-│   │   │   ├── imageIpc.js        # 图片IPC通信
-│   │   │   ├── audioIpc.js        # 音频IPC通信
-│   │   │   ├── fontIpc.js         # 字体IPC通信
-│   │   │   └── ipc.js             # 通用IPC通信
-│   │   └── preload/               # 预加载脚本
-│   └── renderer/                  # 渲染进程代码
-│       ├── src/
-│       │   ├── assets/            # 静态资源
-│       │   ├── components/        # 公共组件
-│       │   │   ├── ModelCard.vue  # 模型卡片
-│       │   │   ├── ModelViewer.vue# 3D模型预览
-│       │   │   └── TagInput.vue   # 标签输入
-│       │   ├── composables/       # 组合式函数
-│       │   ├── i18n/              # 国际化配置
-│       │   ├── iconfont/          # 图标字体
-│       │   ├── router/            # 路由配置
-│       │   ├── stores/            # Pinia状态管理
-│       │   ├── views/             # 页面视图
-│       │   │   ├── tools/         # 工具页面
-│       │   │   │   ├── ImageSplitTool.vue
-│       │   │   │   └── ImageMergeTool.vue
-│       │   │   ├── ModelLayout.vue
-│       │   │   ├── ImageLayout.vue
-│       │   │   ├── AudioLayout.vue
-│       │   │   ├── FontLayout.vue
-│       │   │   ├── SettingsView.vue
-│       │   │   └── ToolView.vue
-│       │   ├── App.vue            # 根组件
-│       │   └── main.js            # 渲染进程入口
-│       └── index.html             # HTML模板
-├── resources/                     # 应用资源
-├── package.json                   # 项目配置
-└── vite.config.js                 # Vite配置
-```
 
 ## 系统要求
 
@@ -84,3 +58,63 @@ ipixel/
 4. 编辑信息：在详情页修改名称、简介、标签
 5. 搜索筛选：使用顶部搜索框和标签/格式筛选器快速定位资源
 6. 切换资源类型：使用左侧边栏切换模型、图片、音频、字体库
+
+---
+
+## English
+
+## About
+
+iPixel is a desktop application focused on local asset management, providing efficient and secure digital resource management solutions for designers, creators, and developers. It supports multiple asset types including images, audio, fonts, and 3D models, with all data stored locally to protect privacy.
+
+## Screenshots
+![alt text](README/image.png)
+
+![alt text](README/image-1.png)
+
+## Target Users
+
+Designers, artists, video/audio designers, content creators, game developers, UI/UX designers, and other professionals who need to manage large volumes of digital assets.
+
+## Features
+
+- Dedicated preview and management features for each asset type
+- Independent storage modules for image, model, font, and audio libraries for faster resource organization
+- Tag system for quick marking and retrieval
+- Customizable display fields to show asset information on demand
+- Detailed information panel showing file metadata
+- Filter by name, tag, format, and other dimensions
+- Quick locate target assets
+- Dark/light theme switching for different usage scenarios
+- Multi-language support
+- Customizable display fields for personalized interface layout
+- Complete operation log recording with detailed viewing support
+- Device information monitoring for one-click viewing of CPU, memory, system version, etc.
+- All data stored locally, no internet connection required
+- No user data collection, high priority on privacy protection
+
+## Supported Formats
+
+Images: PNG, JPG, JPEG, BMP, WebP, GIF, TGA
+Audio: MP3, WAV, OGG, FLAC, AAC, M4A
+Fonts: TTF, OTF, WOFF, WOFF2
+Models: GLB, GLTF, OBJ, STL, JSON, FBX
+
+- Metadata: SQLite database (imodel.db) for storing resource metadata
+- File storage: Sharded storage by SHA256 hash value in models/XX/ and images/XX/ directories (XX is the first two hash characters, 00-ff)
+- Resource ID: SHA256 hash value ensures uniqueness
+- Library configuration: library.json stores basic library information
+
+## System Requirements
+
+- Windows 10+ / macOS 10.15+ / Linux
+- Node.js 18+
+
+## Usage Guide
+
+1. First launch: Select "Create New Library" to create an empty library, or "Open Library" to select an existing one
+2. Upload resources: Click the "Upload" button, supporting single upload (with detailed editing) or batch upload
+3. Preview resources: Click on resource cards to enter the detail page
+4. Edit information: Modify name, description, and tags on the detail page
+5. Search and filter: Use the top search box and tag/format filters to quickly locate resources
+6. Switch resource types: Use the left sidebar to switch between model, image, audio, and font libraries

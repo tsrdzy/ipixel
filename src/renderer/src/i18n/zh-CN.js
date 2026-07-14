@@ -4,7 +4,7 @@ export default {
     delete: '删除',
     cancel: '取消',
     confirm: '确认',
-    ok: '成功',
+    ok: '确定',
     close: '关闭',
     edit: '编辑',
     add: '添加',
