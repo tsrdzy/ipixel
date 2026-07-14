@@ -2,7 +2,7 @@ import { ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs'
 import { getLibraryPath } from './config.js'
-import { hashFile, addAudio, commitAudio, updateAudio, deleteAudio, loadAudios, getAudio, readAudioFile, exportAudio } from './audioStore.js'
+import { hashFile, addAudio, commitAudio, updateAudio, deleteAudio, loadAudios, getAudio, readAudioFile, exportAudio, saveAudioBuffer } from './audioStore.js'
 import { logUpload, logBatchUpload, logDelete, logExport, logError } from './logger.js'
 
 export function registerAudioIpc() {
@@ -182,5 +182,11 @@ export function registerAudioIpc() {
     if (!result || result.canceled || !result.filePaths.length) return null
 
     return await exportAudio(getLibraryPath(), audio.id, result.filePaths[0])
+  })
+
+  ipcMain.handle('audios:save-buffer', async (_e, file) => {
+    const p = getLibraryPath()
+    if (!p) throw new Error('未设置资源库')
+    return saveAudioBuffer(p, file)
   })
 }

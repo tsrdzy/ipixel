@@ -20,6 +20,12 @@ const sortDir = ref('desc')
 const selectedTags = ref([])
 const selectedColors = ref([])
 const selectedFormats = ref([])
+const selectedColorPicker = ref('')
+const colorTolerance = ref(50)
+const colorPickerVisible = ref(false)
+const tempColorPicker = ref('')
+const tempColorTolerance = ref(50)
+const showColorClear = ref(false)
 const selectedIds = ref([])
 const isMultiSelect = ref(false)
 const previewSize = ref(state.library?.settings?.imagePreviewSize || 5)
@@ -31,6 +37,23 @@ function onPreviewSizeChange() {
 }
 function onDisplayChange() {
   saveSettings({ imageDisplay: { ...displaySettings } })
+}
+function confirmColorFilter() {
+  selectedColorPicker.value = tempColorPicker.value
+  colorTolerance.value = tempColorTolerance.value
+  colorPickerVisible.value = false
+}
+function cancelColorFilter() {
+  tempColorPicker.value = selectedColorPicker.value
+  tempColorTolerance.value = colorTolerance.value
+}
+function clearColorPicker() {
+  selectedColorPicker.value = ''
+  colorTolerance.value = 50
+}
+function openColorPicker() {
+  tempColorPicker.value = selectedColorPicker.value
+  tempColorTolerance.value = colorTolerance.value
 }
 const allFieldsSelected = computed({
   get() {
@@ -149,12 +172,22 @@ const filteredImages = computed(() => {
       img.tags && selectedTags.value.some((tag) => img.tags.includes(tag))
     )
   }
-  // 颜色筛选：主色或辅色匹配即可
-  if (selectedColors.value.length > 0) {
-    list = list.filter((img) =>
-      selectedColors.value.includes(img.dominantColor) ||
-      selectedColors.value.includes(img.secondaryColor)
-    )
+  // 颜色筛选：主色或辅色匹配即可，支持颜色选择器范围匹配
+  if (selectedColors.value.length > 0 || selectedColorPicker.value) {
+    list = list.filter((img) => {
+      const colorMatches = (selectedColors.value.includes(img.dominantColor) ||
+        selectedColors.value.includes(img.secondaryColor))
+      if (colorMatches) return true
+      
+      if (selectedColorPicker.value) {
+        const targetRgb = hexToRgb(selectedColorPicker.value)
+        if (targetRgb) {
+          return colorMatchesRange(img.dominantColor, targetRgb, colorTolerance.value) ||
+                 colorMatchesRange(img.secondaryColor, targetRgb, colorTolerance.value)
+        }
+      }
+      return false
+    })
   }
   if (selectedFormats.value.length > 0) {
     list = list.filter((img) => selectedFormats.value.includes((img.fileType || '').toLowerCase()))
@@ -176,6 +209,31 @@ const filteredImages = computed(() => {
 })
 
 // ====== 工具函数 ======
+function parseRgb(colorStr) {
+  const match = colorStr.match(/rgb\((\d+),(\d+),(\d+)\)/)
+  if (match) {
+    return { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) }
+  }
+  return null
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null
+}
+
+function colorMatchesRange(colorStr, targetRgb, tolerance = 10) {
+  const color = parseRgb(colorStr)
+  if (!color) return false
+  return Math.abs(color.r - targetRgb.r) <= tolerance &&
+         Math.abs(color.g - targetRgb.g) <= tolerance &&
+         Math.abs(color.b - targetRgb.b) <= tolerance
+}
+
 function formatSize(bytes) {
   if (!bytes) return '—'
   if (bytes < 1024) return bytes + ' B'
@@ -723,19 +781,45 @@ onMounted(() => {
           </template>
         </el-select>
 
-        <el-select v-model="selectedColors" multiple :placeholder="t('image.colorFilter')" class="filter-select">
-          <template #default>
-            <el-option v-for="color in allColorsInUse" :key="color.name" :value="color.name">
-              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span style="display: flex; align-items: center; gap: 6px;">
-                  <span :style="{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', background: COLOR_HEX[color.name] || '#ccc', border: '1px solid var(--border-soft)' }"></span>
-                  <span>{{ color.name }}</span>
-                </span>
-                <span style="color: var(--text-3); font-size: 12px;">{{ color.count }}</span>
-              </div>
-            </el-option>
+        <el-popover 
+          v-model:visible="colorPickerVisible"
+          placement="bottom-start"
+          width="370px"
+          trigger="click"
+          class="color-picker-popover"
+          @show="openColorPicker"
+          @hide="cancelColorFilter"
+        >
+          <template #reference>
+            <div class="filter-select color-filter-btn" @mouseenter="showColorClear = true" @mouseleave="showColorClear = false">
+              <span v-if="selectedColorPicker" class="color-preview" :style="{ background: selectedColorPicker }"></span>
+              <span class="color-label">{{ selectedColorPicker ? '' : t('image.colorFilter') }}</span>
+              <i v-if="showColorClear && selectedColorPicker" class="iconfont icon-close color-clear-btn" @click.stop="clearColorPicker"></i>
+              <i class="iconfont icon-chevron-down"></i>
+            </div>
           </template>
-        </el-select>
+          <div class="color-picker-panel-wrapper">
+            <el-color-picker-panel 
+              v-model="tempColorPicker" 
+              :show-alpha="false"
+              @change="() => {}"
+            />
+            <div class="color-tolerance-wrapper">
+              <span class="tolerance-label">{{ t('image.tolerance') }}</span>
+              <el-input-number 
+                v-model="tempColorTolerance" 
+                :min="0" 
+                :max="100" 
+                :step="1"
+                class="tolerance-input"
+                size="small"
+              />
+            </div>
+            <div class="color-picker-actions">
+              <el-button size="small" type="primary" @click="confirmColorFilter">{{ t('common.confirm') }}</el-button>
+            </div>
+          </div>
+        </el-popover>
 
         <el-select v-model="selectedFormats" multiple :placeholder="t('home.formatsPlaceholder')" class="filter-select">
           <template #default>
@@ -806,8 +890,8 @@ onMounted(() => {
               <span v-if="displaySettings.fileSize">{{ formatSize(img.fileSize) }}</span>
             </div>
             <div v-if="displaySettings.colors" class="image-colors">
-              <span class="color-dot" :style="{ background: COLOR_HEX[img.dominantColor] || '#ccc' }" :title="img.dominantColor"></span>
-              <span class="color-dot" :style="{ background: COLOR_HEX[img.secondaryColor] || '#ccc' }" :title="img.secondaryColor"></span>
+              <span class="color-dot" :style="{ background: img.dominantColor || '#ccc' }" :title="img.dominantColor || ''"></span>
+              <span class="color-dot" :style="{ background: img.secondaryColor || '#ccc' }" :title="img.secondaryColor || ''"></span>
             </div>
           </div>
         </div>
@@ -919,6 +1003,95 @@ onMounted(() => {
 }
 .filter-select {
   width: 160px;
+}
+.color-filter-select {
+  width: 160px;
+}
+.color-filter-btn {
+  width: 160px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-fill-color-blank);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+.color-filter-btn:hover {
+  border-color: var(--el-border-color-hover);
+}
+.color-filter-btn:focus {
+  outline: none;
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px var(--el-color-primary-light-9);
+}
+.color-filter-btn .color-preview {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+  flex-shrink: 0;
+}
+.color-filter-btn .color-label {
+  flex: 1;
+  text-align: left;
+  color: var(--el-text-color-placeholder);
+  padding-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.color-filter-btn .color-clear-btn {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.color-filter-btn .color-clear-btn:hover {
+  color: var(--el-text-color-regular);
+}
+.color-filter-btn .icon-chevron-down {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.color-picker-popover :deep(.el-popover) {
+  padding: 0;
+}
+.color-picker-panel-wrapper {
+  padding: 8px;
+}
+.color-tolerance-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+.tolerance-label {
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.tolerance-input {
+  flex: 1;
+}
+.color-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
 }
 .batch-actions {
   display: flex;

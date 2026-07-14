@@ -111,7 +111,8 @@ const api = {
     save: (meta) => ipcRenderer.invoke('audios:save', meta),
     update: (id, patch) => ipcRenderer.invoke('audios:update', id, patch),
     delete: (id) => ipcRenderer.invoke('audios:delete', id),
-    export: (audio) => ipcRenderer.invoke('audios:export', audio)
+    export: (audio) => ipcRenderer.invoke('audios:export', audio),
+    saveBuffer: (file) => ipcRenderer.invoke('audios:save-buffer', file)
   },
 
   // ====== 字体 ======

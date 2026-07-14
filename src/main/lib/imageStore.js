@@ -104,8 +104,14 @@ export async function analyzeImage(filePath) {
     const palette = await getPalette(filePath, 5)
     
     if (palette && palette.length > 0) {
-      dominantColor = palette[0] ? `rgb(${palette[0].r},${palette[0].g},${palette[0].b})` : ''
-      secondaryColor = palette[1] ? `rgb(${palette[1].r},${palette[1].g},${palette[1].b})` : ''
+      const firstColor = palette[0]
+      const secondColor = palette[1]
+      dominantColor = firstColor && typeof firstColor._r === 'number' 
+        ? `rgb(${firstColor._r},${firstColor._g},${firstColor._b})`
+        : ''
+      secondaryColor = secondColor && typeof secondColor._r === 'number' 
+        ? `rgb(${secondColor._r},${secondColor._g},${secondColor._b})`
+        : ''
     }
   } catch (e) {
     console.warn('ColorThief failed:', e.message)
@@ -124,20 +130,20 @@ export async function analyzeImage(filePath) {
           const r = data[offset + 2]
           const a = data[offset + 3]
           if (a < 50) continue
-          const name = nearestPaletteColor(r, g, b)
-          colorCount.set(name, (colorCount.get(name) || 0) + 1)
+          const colorKey = `rgb(${r},${g},${b})`
+          colorCount.set(colorKey, (colorCount.get(colorKey) || 0) + 1)
         }
       }
 
       const sorted = [...colorCount.entries()].sort((a, b) => b[1] - a[1])
       if (sorted.length > 0) {
-        dominantColor = sorted[0]?.[0] || 'gray'
-        secondaryColor = sorted[1]?.[0] || 'gray'
+        dominantColor = sorted[0]?.[0] || 'rgb(128,128,128)'
+        secondaryColor = sorted[1]?.[0] || 'rgb(128,128,128)'
       }
     } catch (bitmapErr) {
       console.warn('Bitmap analysis also failed:', bitmapErr.message)
-      dominantColor = 'gray'
-      secondaryColor = 'gray'
+      dominantColor = 'rgb(128,128,128)'
+      secondaryColor = 'rgb(128,128,128)'
     }
   }
 

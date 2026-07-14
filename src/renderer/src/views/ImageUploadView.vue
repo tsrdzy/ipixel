@@ -340,15 +340,15 @@ onMounted(async () => {
                 <div class="info-item">
                   <span class="info-label"><i class="iconfont icon-image"></i> {{ t('image.dominantColor') }}</span>
                   <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
-                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.dominantColor] || '#ccc' }"></span>
-                    {{ fileInfo.dominantColor }}
+                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: fileInfo.dominantColor || '#ccc' }"></span>
+                    {{ fileInfo.dominantColor || '-' }}
                   </span>
                 </div>
                 <div class="info-item">
                   <span class="info-label"><i class="iconfont icon-image"></i> {{ t('image.secondaryColor') }}</span>
                   <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
-                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: COLOR_HEX[fileInfo.secondaryColor] || '#ccc' }"></span>
-                    {{ fileInfo.secondaryColor }}
+                    <span :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: fileInfo.secondaryColor || '#ccc' }"></span>
+                    {{ fileInfo.secondaryColor || '-' }}
                   </span>
                 </div>
                 <div class="info-item">

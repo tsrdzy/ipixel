@@ -296,3 +296,50 @@ export async function exportAudio(folderPath, id, targetDir) {
   await fsp.copyFile(join(dir, audio.fileName), targetPath)
   return { targetDir, fileName: `${safeName}.${ext}` }
 }
+
+export async function saveAudioBuffer(folderPath, file) {
+  const buffer = Buffer.from(file.base64, 'base64')
+  const hash = createHash('sha256')
+  hash.update(buffer)
+  const id = hash.digest('hex')
+
+  if (getAudio(id)) {
+    return { skipped: true, id }
+  }
+
+  const dir = audioDir(folderPath, id)
+  await fsp.mkdir(dir, { recursive: true })
+
+  const fileName = file.fileName || `audio_${Date.now()}.wav`
+  const destPath = join(dir, fileName)
+  await fsp.writeFile(destPath, buffer)
+
+  const ext = fileName.split('.').pop().toLowerCase()
+  let duration = 0
+  let sampleRate = 0
+  let channels = 0
+
+  try {
+    duration = estimateDuration(buffer, ext)
+    sampleRate = estimateSampleRate(buffer, ext)
+    channels = estimateChannels(buffer, ext)
+  } catch (e) {
+    console.warn('音频解析失败:', fileName, e)
+  }
+
+  const meta = {
+    id,
+    name: file.name || '',
+    fileName,
+    fileType: ext,
+    fileSize: buffer.length,
+    duration,
+    sampleRate,
+    channels,
+    uploadTime: new Date().toISOString(),
+    tags: file.tags || []
+  }
+
+  commitAudio(meta)
+  return { id, ...meta }
+}
