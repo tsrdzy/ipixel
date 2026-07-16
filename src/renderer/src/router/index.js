@@ -51,6 +51,12 @@ const routes = [
     meta: { icon: '&#xe704;', title: 'menu.settings', requiresAuth: true }
   },
   {
+    path: '/shortcuts',
+    name: 'shortcuts',
+    component: () => import('../views/ShortcutsView.vue'),
+    meta: { icon: '&#xe617;', title: 'menu.shortcuts', requiresAuth: true }
+  },
+  {
     path: '/logs',
     name: 'logs',
     component: () => import('../views/LogsView.vue'),

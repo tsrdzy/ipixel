@@ -428,16 +428,18 @@ onMounted(async () => {
   justify-content: center;
 }
 .preview-wrapper {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .preview-img {
-  max-width: 100%;
-  max-height: calc(100vh - 120px);
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 .viewer-empty {
   width: 100%;

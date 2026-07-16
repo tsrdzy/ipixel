@@ -2,12 +2,15 @@
 import { ref, computed, onMounted, defineComponent, watchEffect, h, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { useStore } from '../composables/useStore'
 import { useImageState } from '../composables/useImageState'
 import { useDragUpload } from '../composables/useDragUpload'
+import { useResourceShortcuts } from '../composables/useResourceShortcuts'
+import { useSettingsStore } from '../stores/settings'
 
 const router = useRouter()
+const settingsStore = useSettingsStore()
 const { state, switchLibrary, renameLibrary, saveSettings, closeLibrary } = useStore()
 const { setPendingUpload, setEditingImage } = useImageState()
 const { t } = useI18n()
@@ -75,6 +78,7 @@ function onSelectAll(val) {
 }
 const anchorId = ref(null)
 const loading = ref(false)
+const showScrollTop = ref(false)
 
 // 框选相关
 const isDragging = ref(false)
@@ -274,6 +278,12 @@ async function handleLibCommand(cmd) {
 // ====== 加载图片列表 ======
 async function loadImages() {
   loading.value = true
+  images.value = []
+  const loadingInstance = ElLoading.service({
+    target: contentRef.value,
+    text: t('common.loading'),
+    background: 'rgba(255, 255, 255, 0.8)'
+  })
   try {
     const list = await window.api.images.list()
     images.value = list || []
@@ -281,6 +291,7 @@ async function loadImages() {
     console.error('加载图片列表失败:', e)
     ElMessage.error(t('common.loadFailed'))
   } finally {
+    loadingInstance.close()
     loading.value = false
   }
 }
@@ -530,6 +541,40 @@ async function handleBatchAddTag() {
   }
 }
 
+async function handleExport() {
+  if (selectedIds.value.length === 0) return
+  try {
+    const ids = [...selectedIds.value]
+    const result = await window.api.images.export(ids)
+    if (result) {
+      ElMessage.success(t('common.export', { count: result.count, dir: result.dir }))
+    }
+  } catch (e) {
+    console.error('导出失败:', e)
+    ElMessage.error(t('common.failed'))
+  }
+}
+
+async function handleSingleAddTag(img) {
+  try {
+    const { value } = await ElMessageBox.prompt(t('home.enterTag'), t('home.addTag'), {
+      confirmButtonText: t('common.ok'),
+      cancelButtonText: t('common.cancel'),
+      inputValidator: (v) => (v && v.trim() ? true : t('home.enterTag'))
+    })
+    const tag = value.trim()
+    if (!img.tags) img.tags = []
+    if (!img.tags.includes(tag)) {
+      img.tags.push(tag)
+      await window.api.images.update(String(img.id), { tags: [...img.tags] })
+      await loadImages()
+      ElMessage.success(t('common.success'))
+    }
+  } catch (e) {
+    // 用户取消
+  }
+}
+
 let justBoxSelected = false
 
 function handleContentClick(e) {
@@ -555,6 +600,7 @@ function updateDragEnd() {
 
 function handleMouseDown(e) {
   if (!contentRef.value) return
+  if (e.button === 2) return
   if (e.ctrlKey || e.metaKey || e.shiftKey) {
     return
   }
@@ -664,8 +710,49 @@ function handleUploadCommand(cmd) {
   else if (cmd === 'batch') handleBatchUpload()
 }
 
+const {
+  contextMenuVisible,
+  contextMenuPosition,
+  contextMenuType,
+  contextMenuItem,
+  handleContextMenu,
+  handleContextMenuCommand
+} = useResourceShortcuts({
+  filteredList: filteredImages,
+  selectedIds,
+  isMultiSelect,
+  anchorId,
+  contentRef,
+  onSelectAll: selectAll,
+  onClearSelection: clearSelection,
+  onDelete: handleDelete,
+  onBatchDelete: handleBatchDelete,
+  onBatchAddTag: handleBatchAddTag,
+  onExport: handleExport,
+  onRefresh: loadImages,
+  onOpenDetail: setEditingImage,
+  onAddTag: handleSingleAddTag,
+  getPreviewSize: () => previewSize.value,
+  shortcuts: settingsStore.shortcuts
+})
+
+function handleScroll() {
+  if (contentRef.value) {
+    showScrollTop.value = contentRef.value.scrollTop > 200
+  }
+}
+
+function scrollToTop() {
+  if (contentRef.value) {
+    contentRef.value.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
 onMounted(() => {
   loadImages()
+  if (contentRef.value) {
+    contentRef.value.addEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
@@ -857,7 +944,8 @@ onMounted(() => {
           @dragenter="onDragEnter"
           @dragover="onDragOver"
           @dragleave="onDragLeave"
-          @drop="onDrop">
+          @drop="onDrop"
+          @contextmenu="handleContextMenu">
       <div v-if="filteredImages.length" class="grid">
         <div
           v-for="img in filteredImages"
@@ -928,6 +1016,70 @@ onMounted(() => {
         <p class="drag-overlay-formats">PNG · JPG · JPEG · BMP · WEBP · GIF · TGA</p>
       </div>
     </div>
+
+    <!-- 右键菜单 -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenuVisible"
+        class="context-menu"
+        :style="{
+          left: contextMenuPosition.x + 'px',
+          top: contextMenuPosition.y + 'px'
+        }"
+        @click.stop
+      >
+        <div class="context-menu-list">
+          <template v-if="contextMenuType === 'blank'">
+            <div class="context-menu-item" @click="handleContextMenuCommand('select-all')">
+              <span class="context-menu-icon">&#xeb39;</span>
+              <span>{{ t('home.selectAll') }}</span>
+            </div>
+            <div class="context-menu-item" @click="handleContextMenuCommand('refresh')">
+              <span class="context-menu-icon">&#xeb6d;</span>
+              <span>{{ t('common.refresh') }}</span>
+            </div>
+          </template>
+          <template v-else-if="contextMenuType === 'item'">
+            <div class="context-menu-item" @click="handleContextMenuCommand('open-detail')">
+              <span class="context-menu-icon">&#xeb58;</span>
+              <span>{{ t('common.openDetail') }}</span>
+            </div>
+            <div class="context-menu-item" @click="handleContextMenuCommand('add-tag')">
+              <span class="context-menu-icon">&#xeb2a;</span>
+              <span>{{ t('home.addTag') }}</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item context-menu-item-danger" @click="handleContextMenuCommand('delete')">
+              <span class="context-menu-icon">&#xe872;</span>
+              <span>{{ t('common.delete') }}</span>
+            </div>
+          </template>
+          <template v-else-if="contextMenuType === 'batch'">
+            <div class="context-menu-item" @click="handleContextMenuCommand('batch-add-tag')">
+              <span class="context-menu-icon">&#xeb2a;</span>
+              <span>{{ t('home.batchAddTag') }} ({{ selectedIds.length }})</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item context-menu-item-danger" @click="handleContextMenuCommand('batch-delete')">
+              <span class="context-menu-icon">&#xe872;</span>
+              <span>{{ t('home.batchDelete') }} ({{ selectedIds.length }})</span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- 回到顶部按钮 -->
+    <transition name="fade">
+      <div
+        v-if="showScrollTop"
+        class="scroll-top-btn"
+        @click="scrollToTop"
+        :title="t('common.backToTop')"
+      >
+        <span class="iconfont">&#xe74a;</span>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -1252,5 +1404,83 @@ onMounted(() => {
   font-weight: 400 !important;
   margin-top: 8px !important;
   opacity: 0.7;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  overflow: hidden;
+}
+.context-menu-list {
+  padding: 4px 0;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-1);
+  transition: background 0.15s;
+}
+.context-menu-item:hover {
+  background: var(--bg-hover);
+}
+.context-menu-item-danger:hover {
+  background: rgba(255, 77, 79, 0.1);
+  color: #ff4d4f;
+}
+.context-menu-icon {
+  font-family: 'iconfont';
+  margin-right: 8px;
+  font-size: 14px;
+}
+.context-menu-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 4px 0;
+}
+
+/* 回到顶部按钮 */
+.scroll-top-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  transition: all 0.2s;
+}
+.scroll-top-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.scroll-top-btn .iconfont {
+  font-size: 18px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

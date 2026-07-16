@@ -154,7 +154,9 @@ async function showAbout() {
   }
 }
 
-
+function showShortcuts() {
+  window.location.hash = '#/shortcuts'
+}
 
 function handleMoreCommand(command) {
   switch (command) {
@@ -166,6 +168,9 @@ function handleMoreCommand(command) {
       break
     case 'settings':
       window.location.hash = '#/settings'
+      break
+    case 'shortcuts':
+      showShortcuts()
       break
     case 'about':
       showAbout()
@@ -313,6 +318,7 @@ onBeforeUnmount(() => {
                   <el-dropdown-item command="tutorial">{{ t('menu.tutorial') }}</el-dropdown-item>
                   <el-dropdown-item command="feedback">{{ t('menu.feedback') }}</el-dropdown-item>
                   <el-dropdown-item command="settings">{{ t('menu.settings') }}</el-dropdown-item>
+                  <el-dropdown-item command="shortcuts">{{ t('menu.shortcuts') }}</el-dropdown-item>
                   <el-dropdown-item command="logs" divided>操作日志</el-dropdown-item>
                   <el-dropdown-item command="about">{{ t('menu.about') }}</el-dropdown-item>
                 </el-dropdown-menu>

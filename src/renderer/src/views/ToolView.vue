@@ -10,6 +10,7 @@ import ImageFormatTool from './tools/ImageFormatTool.vue'
 import GifGeneratorTool from './tools/GifGeneratorTool.vue'
 import AudioSpeedTool from './tools/AudioSpeedTool.vue'
 import AudioVideoSplitTool from './tools/AudioVideoSplitTool.vue'
+import ImagePixelTool from './tools/ImagePixelTool.vue'
 
 const { t } = useI18n()
 
@@ -33,6 +34,7 @@ const tools = {
       { id: 'compress', name: t('tools.imageCompress'), description: t('tools.imageCompressDesc'), lastUpdate: '2026-07-09' },
       { id: 'format', name: t('tools.imageFormat'), description: t('tools.imageFormatDesc'), lastUpdate: '2026-07-10' },
       { id: 'ico', name: t('tools.icoGenerator'), description: t('tools.icoGeneratorDesc'), lastUpdate: '2026-07-10' },
+      { id: 'pixel', name: t('tools.imagePixel'), description: t('tools.imagePixelDesc'), lastUpdate: '2026-07-17' },
       { id: 'gif', name: t('tools.gifGenerator'), description: t('tools.gifGeneratorDesc'), lastUpdate: '2026-07-12' }
     ],
   video: [
@@ -112,6 +114,7 @@ function closeDialog() {
       <GifGeneratorTool v-if="selectedTool?.id === 'gif'" />
       <AudioSpeedTool v-if="selectedTool?.id === 'audioSpeed'" />
       <AudioVideoSplitTool v-if="selectedTool?.id === 'videoSplit'" />
+      <ImagePixelTool v-if="selectedTool?.id === 'pixel'" />
     </ElDialog>
   </div>
 </template>

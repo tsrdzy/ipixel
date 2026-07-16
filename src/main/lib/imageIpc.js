@@ -304,8 +304,8 @@ export function registerImageIpc() {
     }
   })
 
-  // 导出图片
-  ipcMain.handle('images:export', async (_e, image) => {
+  // 导出图片（支持单个或批量）
+  ipcMain.handle('images:export', async (_e, images) => {
     const p = getLibraryPath()
     if (!p) throw new Error('未设置资源库')
 
@@ -315,7 +315,20 @@ export function registerImageIpc() {
     })
     if (result.canceled || result.filePaths.length === 0) return null
 
-    return exportImage(p, image.id, result.filePaths[0])
+    const targetDir = result.filePaths[0]
+    const ids = Array.isArray(images) ? images : [images.id]
+    let count = 0
+
+    for (const id of ids) {
+      try {
+        await exportImage(p, id, targetDir)
+        count++
+      } catch (e) {
+        console.error('导出失败:', id, e)
+      }
+    }
+
+    return { count, dir: targetDir }
   })
 
   // 保存分割结果到资源库

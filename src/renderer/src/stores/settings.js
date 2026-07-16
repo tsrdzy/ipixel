@@ -10,6 +10,15 @@ export const useSettingsStore = defineStore('settings', () => {
   const deviceInfo = ref(null)
   const checkForUpdates = ref(true)
   const skin = ref('#409EFF')
+  const shortcuts = ref({
+    selectAll: { key: 'a', ctrl: true },
+    delete: { key: 'Delete', ctrl: false },
+    export: { key: 's', ctrl: true },
+    arrowUp: { key: 'ArrowUp', ctrl: false },
+    arrowDown: { key: 'ArrowDown', ctrl: false },
+    arrowLeft: { key: 'ArrowLeft', ctrl: false },
+    arrowRight: { key: 'ArrowRight', ctrl: false }
+  })
 
   async function loadDeviceInfo() {
     try {
@@ -46,6 +55,15 @@ export const useSettingsStore = defineStore('settings', () => {
 
     const savedSkin = localStorage.getItem('imodel-skin')
     if (savedSkin) skin.value = savedSkin
+
+    const savedShortcuts = localStorage.getItem('imodel-shortcuts')
+    if (savedShortcuts) {
+      try {
+        shortcuts.value = { ...shortcuts.value, ...JSON.parse(savedShortcuts) }
+      } catch {
+        // ignore
+      }
+    }
 
     applyTheme()
   }
@@ -92,6 +110,24 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage.setItem('imodel-checkForUpdates', val ? 'true' : 'false')
   }
 
+  function setShortcuts(key, value) {
+    shortcuts.value[key] = value
+    localStorage.setItem('imodel-shortcuts', JSON.stringify(shortcuts.value))
+  }
+
+  function resetShortcuts() {
+    shortcuts.value = {
+      selectAll: { key: 'a', ctrl: true },
+      delete: { key: 'Delete', ctrl: false },
+      export: { key: 's', ctrl: true },
+      arrowUp: { key: 'ArrowUp', ctrl: false },
+      arrowDown: { key: 'ArrowDown', ctrl: false },
+      arrowLeft: { key: 'ArrowLeft', ctrl: false },
+      arrowRight: { key: 'ArrowRight', ctrl: false }
+    }
+    localStorage.setItem('imodel-shortcuts', JSON.stringify(shortcuts.value))
+  }
+
   async function checkUpdate() {
     if (!checkForUpdates.value) return null
 
@@ -125,6 +161,7 @@ export const useSettingsStore = defineStore('settings', () => {
     deviceInfo,
     checkForUpdates,
     skin,
+    shortcuts,
     init,
     toggleTheme,
     setShowThemeInTitlebar,
@@ -134,6 +171,8 @@ export const useSettingsStore = defineStore('settings', () => {
     checkUpdate,
     applyTheme,
     applySkin,
-    setSkin
+    setSkin,
+    setShortcuts,
+    resetShortcuts
   }
 })

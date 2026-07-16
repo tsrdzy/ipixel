@@ -1,6 +1,6 @@
 {
   "name": "ipixel",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A material resource management software aided by AI development",
   "main": "./out/main/index.js",
   "author": "tsrdzy",
